@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>员工详情 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 组织与人员 / 员工详情</div>
+    <div class="page-head">
+      <div><h1>员工详情</h1><p>档案、考勤、请假与排班全景</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-2">
+  <div class="card"><div class="card-head"><h2>档案信息</h2><a class="btn btn-sm" th:href="@{/admin/employees/edit/{id}(id=${employee.id})}">编辑档案</a></div>
+    <div class="card-body"><div class="kv">
+      <div><span class="k">工号</span><span class="v" th:text="${employee.employeeNo}">-</span></div>
+      <div><span class="k">姓名</span><span class="v" th:text="${employee.name}">-</span></div>
+      <div><span class="k">部门</span><span class="v" th:text="${employee.departmentName}">-</span></div>
+      <div><span class="k">岗位</span><span class="v" th:text="${employee.position}">-</span></div>
+      <div><span class="k">手机号</span><span class="v" th:text="${employee.phone}">-</span></div>
+      <div><span class="k">入职日期</span><span class="v" th:text="${employee.hireDate}">-</span></div>
+      <div><span class="k">班次</span><span class="v" th:text="${employee.shiftName}">-</span></div>
+      <div><span class="k">状态</span><span class="v"><span class="badge" th:attr="data-status=${employee.status}">-</span></span></div>
+    </div></div></div>
+  <div class="card"><div class="card-head"><h2>近月考勤</h2><span class="sub" th:text="${#lists.size(records)} + ' 条'">-</span></div>
+    <div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>日期</th><th>上班</th><th>下班</th><th>状态</th><th>工时</th></tr></thead><tbody><tr th:each="r : ${records}"><td th:text="${r.attendanceDate}">-</td>
+      <td><span data-dt th:attr="data-dt=${r.checkInTime}"></span></td><td><span data-dt th:attr="data-dt=${r.checkOutTime}"></span></td>
+      <td><span class="badge" th:attr="data-status=${r.status}">-</span></td><td th:text="${r.workHours}">0</td></tr><tr th:if="${#lists.isEmpty(records)}"><td colspan="5" class="tbl-empty">暂无考勤记录</td></tr></tbody></table></div></div></div>
+</div>
+<div class="grid grid-2">
+  <div class="card"><div class="card-head"><h2>请假记录</h2></div><div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>假别</th><th>开始</th><th>结束</th><th>天数</th><th>状态</th></tr></thead><tbody><tr th:each="l : ${leaves}"><td th:text="${l.typeName}">-</td><td th:text="${l.startDate}">-</td>
+      <td th:text="${l.endDate}">-</td><td th:text="${l.days}">0</td>
+      <td><span class="badge" th:attr="data-status=${l.status}">-</span></td></tr><tr th:if="${#lists.isEmpty(leaves)}"><td colspan="5" class="tbl-empty">暂无请假记录</td></tr></tbody></table></div></div></div>
+  <div class="card"><div class="card-head"><h2>本月排班</h2></div><div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>日期</th><th>班次</th><th>上班</th><th>下班</th><th>休息</th></tr></thead><tbody><tr th:each="s : ${schedules}"><td th:text="${s.workDate}">-</td><td th:text="${s.shiftName}">-</td>
+      <td th:text="${s.startTime}">-</td><td th:text="${s.endTime}">-</td>
+      <td><span class="badge" th:attr="data-status=${s.isRest != null and s.isRest == 1 ? '1' : '0'}">-</span></td></tr><tr th:if="${#lists.isEmpty(schedules)}"><td colspan="5" class="tbl-empty">暂无排班</td></tr></tbody></table></div></div></div>
+</div>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

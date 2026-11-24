@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>月度汇总 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 考勤管理 / 月度汇总</div>
+    <div class="page-head">
+      <div><h1>月度汇总</h1><p>工时核算、异常统计与月度关账</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card"><div class="card-head"><h2>月度汇总与关账</h2>
+  <div class="page-actions"><form th:action="@{/admin/attendance/summary/generate}" method="post" style="display:inline-flex;gap:8px;align-items:center">
+    <input type="text" name="ym" th:value="${ym}" placeholder="YYYY-MM" style="width:110px">
+    <button class="btn btn-sm btn-primary" type="submit" data-confirm="确认重算该月汇总？">生成 / 重算</button></form>
+    <a class="btn btn-sm" th:href="@{/admin/report}">统计报表</a></div></div>
+<form class="toolbar" th:action="@{/admin/attendance/summary}" method="get"><div class="field"><label>统计月份</label><input type="month" name="ym" th:value="${ym}"></div><div class="field"><label>部门</label><select name="deptId"><option value="">全部部门</option><option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}" th:selected="${deptId != null and deptId == d.id}">部门</option></select></div><div class="field grow"><label>姓名 / 工号</label><input type="text" name="keyword" th:value="${keyword}"></div><button class="btn btn-primary" type="submit">查询</button></form>
+  <div class="hint" style="padding:0 18px 14px">当前月份已关账记录 <b th:text="${locked}">0</b> 条；关账后该月数据不再随打卡变动自动重算。</div>
+<div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>月份</th><th>工号</th><th>姓名</th><th>部门</th><th>应出勤</th><th>实出勤</th><th>迟到</th><th>早退</th><th>旷工</th><th>请假(天)</th><th>加班(h)</th><th>补卡</th><th>总工时</th><th>关账</th><th>操作</th></tr></thead><tbody><tr th:each="s : ${rows}"><td th:text="${s.ym}">-</td><td th:text="${s.employeeNo}">-</td>
+      <td th:text="${s.employeeName}">-</td><td th:text="${s.departmentName}">-</td>
+      <td th:text="${s.expectedDays}">0</td><td th:text="${s.actualDays}">0</td>
+      <td th:text="${s.lateCnt}">0</td><td th:text="${s.earlyCnt}">0</td><td th:text="${s.absentCnt}">0</td>
+      <td th:text="${s.leaveDays}">0</td><td th:text="${s.overtimeHours}">0</td><td th:text="${s.makeupCnt}">0</td>
+      <td th:text="${s.workHours}">0</td><td><span class="badge" th:attr="data-status=${s.locked != null and s.locked == 1 ? '1' : '0'}">-</span></td>
+      <td><form th:action="@{/admin/attendance/summary/lock}" method="post" style="display:inline">
+        <input type="hidden" name="ym" th:value="${ym}"><input type="hidden" name="locked" th:value="${s.locked != null and s.locked == 1 ? 0 : 1}">
+        <button class="btn btn-sm" type="submit" th:text="${s.locked != null and s.locked == 1 ? '解锁' : '关账'}">关账</button></form></td></tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="15" class="tbl-empty">该月暂无汇总数据，点击「生成 / 重算」</td></tr></tbody></table></div></div><div class="pager" th:attr="data-pages=${pageData.totalPages},data-page=${pageData.page},data-total=${pageData.total}"></div></div>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

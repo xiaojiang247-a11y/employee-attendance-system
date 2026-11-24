@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>考勤报表 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 统计报表</div>
+    <div class="page-head">
+      <div><h1>考勤报表</h1><p>多维统计 · 图表分析 · CSV 导出</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card"><div class="card-head"><h2>月度考勤报表</h2><div class="page-actions">
+  <a class="btn btn-sm btn-primary" th:href="@{/admin/report/export(ym=${ym},deptId=${deptId})}">导出 CSV</a></div></div>
+<form class="toolbar" th:action="@{/admin/report}" method="get"><div class="field"><label>统计月份</label><input type="month" name="ym" th:value="${ym}"></div><div class="field"><label>部门</label><select name="deptId"><option value="">全部部门</option><option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}" th:selected="${deptId != null and deptId == d.id}">部门</option></select></div><button class="btn btn-primary" type="submit">查询</button></form>
+<div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>月份</th><th>应出勤</th><th>实出勤</th><th>迟到</th><th>早退</th><th>旷工</th><th>请假</th><th>加班(h)</th><th>补卡</th><th>总工时</th><th>关账</th></tr></thead><tbody><tr th:each="r : ${rows}"><td th:text="${r['employee_no']}">-</td><td th:text="${r['employee_name']}">-</td>
+      <td th:text="${r['department_name']}">-</td><td th:text="${r['ym']}">-</td>
+      <td th:text="${r['expected_days']}">0</td><td th:text="${r['actual_days']}">0</td>
+      <td th:text="${r['late_cnt']}">0</td><td th:text="${r['early_cnt']}">0</td><td th:text="${r['absent_cnt']}">0</td>
+      <td th:text="${r['leave_days']}">0</td><td th:text="${r['overtime_hours']}">0</td><td th:text="${r['makeup_cnt']}">0</td>
+      <td th:text="${r['work_hours']}">0</td>
+      <td><span class="badge" th:attr="data-status=${r['locked'] == 1 or r['locked'] == '1' ? '1' : '0'}">-</span></td></tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="14" class="tbl-empty">该月暂无汇总数据</td></tr></tbody></table></div></div></div>
+<div class="grid grid-2">
+  <div class="card"><div class="card-head"><h2>近 6 月出勤趋势</h2></div>
+    <div class="card-body"><div class="chart-box" data-chart="line" data-source="monthlyTrend" data-x="label" data-y="actual_days,late_cnt,leave_days" data-names="实出勤,迟到次数,请假天数" data-colors="#12b886,#fa5252,#f59f00"></div><div class="legend" id="legend-monthlyTrend"></div></div></div>
+  <div class="card"><div class="card-head"><h2>考勤状态分布</h2></div>
+    <div class="card-body"><div class="donut-wrap"><div class="chart-box sm" data-chart="donut" data-source="statusDist" data-x="label"></div><div class="donut-legend" id="legend-statusDist"></div></div></div></div>
+</div>
+<div class="grid grid-2">
+  <div class="card"><div class="card-head"><h2>部门出勤率</h2></div><div class="card-body"><div class="chart-box" data-chart="hbar" data-source="deptRank" data-x="label" data-y="rate"></div></div></div>
+  <div class="card"><div class="card-head"><h2>假别使用分布</h2></div><div class="card-body"><div class="chart-box" data-chart="hbar" data-source="leaveUsage" data-x="label" data-y="cnt"></div></div></div>
+</div>
+<div class="card"><div class="card-head"><h2>加班排行</h2></div><div class="card-body"><div class="chart-box" data-chart="hbar" data-source="overtimeRanking" data-x="label" data-y="cnt"></div></div></div>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:inline="javascript">/*<![CDATA[*/
+window.DASH = {
+  monthlyTrend: /*[[${monthlyTrend}]]*/ [],
+  statusDist: /*[[${statusDist}]]*/ [],
+  deptRank: /*[[${deptRank}]]*/ [],
+  leaveUsage: /*[[${leaveUsage}]]*/ [],
+  overtimeRanking: /*[[${overtimeRanking}]]*/ []
+};
+/*]]>*/</script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

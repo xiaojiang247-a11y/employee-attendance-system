@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>排班日历 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 考勤管理 / 排班</div>
+    <div class="page-head">
+      <div><h1>排班日历</h1><p>月度日历 · 批量生成 · 单日调整</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card"><div class="card-head"><h2>批量排班</h2><span class="sub" th:text="'本月共 ' + ${totalSchedules} + ' 条排班'">-</span></div>
+  <form class="toolbar" th:action="@{/admin/schedule/generate}" method="post">
+    <div class="field"><label>开始日期</label><input type="date" name="start" required></div>
+    <div class="field"><label>结束日期</label><input type="date" name="end" required></div>
+    <div class="field"><label>部门</label><select name="deptId"><option value="">全公司</option>
+      <option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}">部门</option></select></div>
+    <div class="field"><label>班次</label><select name="shiftId"><option value="">按考勤组默认</option>
+      <option th:each="s : ${shifts}" th:value="${s.id}" th:text="${s.name}">班次</option></select></div>
+    <div class="field"><label>生成模式</label><select name="mode"><option value="FIXED">固定班制</option><option value="ROTATE">早晚轮班</option></select></div>
+    <button class="btn btn-primary" type="submit" data-confirm="确认生成排班？重复生成会覆盖区间内已有排班">生成排班</button>
+  </form></div>
+<div class="card"><div class="card-head"><h2 th:text="${month} + ' 排班日历'">排班日历</h2><div class="page-actions">
+  <a class="btn btn-sm" th:href="@{/admin/schedule(month=${prevMonth})}">上月</a>
+  <a class="btn btn-sm" th:href="@{/admin/schedule(month=${nextMonth})}">下月</a></div></div>
+  <div class="card-body">
+    <div class="cal-grid">
+      <div class="cal-dow">一</div><div class="cal-dow">二</div><div class="cal-dow">三</div><div class="cal-dow">四</div><div class="cal-dow">五</div><div class="cal-dow">六</div><div class="cal-dow">日</div>
+      <div class="cal-cell" th:each="c : ${cells}" th:classappend="${!c['inMonth'] ? 'out' : (c['weekend'] ? 'weekend' : '')}">
+        <div class="cal-day"><span th:text="${c['day']}">1</span>
+          <span class="badge" th:if="${c['holiday'] != null}" th:attr="data-status=${c['dayType']}" th:text="${c['holiday']}">节日</span></div>
+        <div class="cal-items"><div class="cal-item" th:each="s : ${c['items']}" th:if="${c['itemCount'] <= 4}">
+          <span th:text="${s.employeeName}">员工</span> · <span th:text="${s.shiftName != null ? s.shiftName : '休息'}">班次</span></div>
+          <div class="cal-more" th:if="${c['itemCount'] > 4}" th:text="'+' + ${c['itemCount'] - 3} + ' 人'">更多</div></div>
+      </div>
+    </div>
+  </div></div>
+<div class="card"><div class="card-head"><h2>排班明细</h2></div><div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>日期</th><th>工号</th><th>姓名</th><th>部门</th><th>班次</th><th>上班</th><th>下班</th><th>休息</th><th>来源</th><th>备注</th></tr></thead><tbody><tr th:each="s : ${rows}"><td th:text="${s.workDate}">-</td><td th:text="${s.employeeNo}">-</td>
+      <td th:text="${s.employeeName}">-</td><td th:text="${s.departmentName}">-</td>
+      <td th:text="${s.shiftName}">-</td><td th:text="${s.startTime}">-</td><td th:text="${s.endTime}">-</td>
+      <td><span class="badge" th:attr="data-status=${s.isRest != null and s.isRest == 1 ? '1' : '0'}">-</span></td>
+      <td th:text="${s.source}">-</td><td th:text="${s.remark}">-</td></tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="10" class="tbl-empty">本月暂无排班，使用上方工具生成</td></tr></tbody></table></div></div></div>
+<div class="card"><div class="card-head"><h2>单日班次调整</h2></div><div class="card-body">
+  <form class="toolbar" th:action="@{/admin/schedule/save-cell}" method="post" style="border:0;padding:0">
+    <div class="field"><label>员工</label><select name="employeeId" required><option th:each="e : ${employees}" th:value="${e.id}" th:text="${e.name} + '（' + ${e.employeeNo} + '）'">员工</option></select></div>
+    <div class="field"><label>日期</label><input type="date" name="date" required></div>
+    <div class="field"><label>班次</label><select name="shiftId"><option th:each="s : ${shifts}" th:value="${s.id}" th:text="${s.name}">班次</option></select></div>
+    <div class="field"><label>设为休息</label><select name="isRest"><option value="0">否</option><option value="1">是</option></select></div>
+    <button class="btn btn-primary" type="submit">保存调整</button></form></div></div>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

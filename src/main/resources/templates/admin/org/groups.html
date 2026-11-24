@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>考勤组 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 组织与人员 / 考勤组</div>
+    <div class="page-head">
+      <div><h1>考勤组</h1><p>班制、工作日与打卡准入条件</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-2-1">
+  <div class="card"><div class="card-head"><h2>考勤组</h2><button class="btn btn-primary btn-sm" onclick="openGroup()">＋ 新增考勤组</button></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>ID</th><th>组名称</th><th>班制</th><th>适用部门</th><th>默认班次</th><th>工作日</th><th>允许IP</th><th>WiFi</th><th>人数</th><th>状态</th><th>操作</th></tr></thead><tbody><tr th:each="g : ${groups}"><td th:text="${g.id}">0</td><td><b th:text="${g.name}">-</b></td>
+      <td><span class="badge" th:attr="data-status=${g.groupType}">-</span></td><td th:text="${g.departmentName}">-</td>
+      <td th:text="${g.shiftName}">-</td><td th:text="${g.workdays}">-</td><td th:text="${g.allowIp}">-</td>
+      <td th:text="${g.wifiSsid}">-</td><td th:text="${g.empCount}">0</td>
+      <td><span class="badge" th:attr="data-status=${g.enabled != null and g.enabled == 1 ? '1' : '0'}">-</span></td>
+      <td class="nowrap"><button class="btn btn-sm" type="button" onclick="editGroup(this)"
+          th:attr="data-id=${g.id},data-name=${g.name},data-type=${g.groupType},data-dept=${g.departmentId},data-shift=${g.defaultShiftId},data-days=${g.workdays},data-ip=${g.allowIp},data-wifi=${g.wifiSsid},data-ahead=${g.punchAheadMin},data-remark=${g.remark},data-enabled=${g.enabled}">编辑</button>
+        <form th:action="@{/admin/groups/delete/{id}(id=${g.id})}" method="post" style="display:inline" data-confirm="确认删除该考勤组？"><button class="btn btn-sm btn-danger" type="submit">删除</button></form></td></tr><tr th:if="${#lists.isEmpty(groups)}"><td colspan="11" class="tbl-empty">暂无考勤组</td></tr></tbody></table></div></div></div>
+  <div class="card"><div class="card-head"><h2>考勤组说明</h2></div><div class="card-body">
+    <div class="hint">· 固定班制按「工作日 + 默认班次」自动生成排班；排班制按排班日历单独指定。</div>
+    <div class="hint">· 允许 IP 与办公 WiFi 是打卡地点校验的辅助条件，与地理围栏取「或」关系。</div>
+    <div class="hint">· 打卡地点围栏在「考勤管理 → 打卡地点」中按考勤组绑定。</div>
+  </div></div>
+</div>
+<div class="modal-mask" id="groupModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <div class="modal-head"><h3>新增 / 编辑考勤组</h3><button type="button" class="icon-btn" onclick="document.getElementById( + mid + ).style.display='none'">✕</button></div>
+    <div class="modal-body"><form th:action="@{/admin/groups/save}" method="post">
+  <input type="hidden" name="id" id="g-id">
+  <div class="form-grid">
+    <div class="field req"><label>组名称</label><input type="text" name="name" id="g-name" required></div>
+    <div class="field"><label>班制</label><select name="groupType" id="g-type"><option value="FIXED">固定班制</option><option value="SCHEDULE">排班制</option><option value="FLEX">自由工时</option></select></div>
+    <div class="field"><label>适用部门</label><select name="departmentId" id="g-dept"><option value="">全公司</option>
+      <option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}">部门</option></select></div>
+    <div class="field"><label>默认班次</label><select name="defaultShiftId" id="g-shift"><option value="">未指定</option>
+      <option th:each="s : ${shifts}" th:value="${s.id}" th:text="${s.name}">班次</option></select></div>
+    <div class="field"><label>工作日（1-7，逗号分隔）</label><input type="text" name="workdays" id="g-days" value="1,2,3,4,5"></div>
+    <div class="field"><label>提前打卡分钟</label><input type="number" name="punchAheadMin" id="g-ahead" value="30"></div>
+    <div class="field"><label>允许 IP（逗号分隔）</label><input type="text" name="allowIp" id="g-ip"></div>
+    <div class="field"><label>办公 WiFi SSID</label><input type="text" name="wifiSsid" id="g-wifi"></div>
+    <div class="field"><label>状态</label><select name="enabled" id="g-enabled"><option value="1">启用</option><option value="0">停用</option></select></div>
+    <div class="field full"><label>备注</label><textarea name="remark" id="g-remark" rows="2"></textarea></div>
+  </div><div class="form-actions"><button type="button" class="btn" onclick="document.getElementById('groupModal').style.display='none'">取消</button><button class="btn btn-primary" type="submit">保存</button></div>
+</form></div>
+  </div>
+</div>
+<script>
+function openGroup(){['g-id','g-name','g-ip','g-wifi','g-remark'].forEach(function(i){document.getElementById(i).value='';});document.getElementById('g-days').value='1,2,3,4,5';document.getElementById('g-ahead').value='30';document.getElementById('groupModal').style.display='flex';}
+function editGroup(b){var d=b.dataset,map={'g-id':'id','g-name':'name','g-type':'type','g-dept':'dept','g-shift':'shift','g-days':'days','g-ip':'ip','g-wifi':'wifi','g-ahead':'ahead','g-remark':'remark','g-enabled':'enabled'};
+  for(var i in map){var v=d[map[i]];document.getElementById(i).value=(v==='null'||v===undefined)?'':v;}document.getElementById('groupModal').style.display='flex';}
+</script>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

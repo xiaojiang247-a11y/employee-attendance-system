@@ -1,0 +1,66 @@
+@echo off
+chcp 936 >nul
+setlocal
+cd /d "%~dp0"
+title 企业考勤管理后台 - 启动器
+
+echo ==========================================
+echo   企业考勤管理后台 启动器  (端口 8080)
+echo ==========================================
+echo.
+
+rem ---------- 1. 定位 JDK ----------
+if defined JAVA_HOME (
+    set "JAVA=%JAVA_HOME%\bin\java.exe"
+) else (
+    set "JAVA=java"
+)
+"%JAVA%" -version >nul 2>&1
+if errorlevel 1 (
+    echo [错误] 找不到 Java。请安装 JDK 21 并设置 JAVA_HOME。
+    pause
+    exit /b 1
+)
+
+rem ---------- 2. 定位 Maven ----------
+set "MVN="
+where mvn >nul 2>&1
+if not errorlevel 1 (
+    set "MVN=mvn"
+) else (
+    if exist "D:\IntelliJ IDEA 2026.1.2\plugins\maven\lib\maven3\bin\mvn.cmd" (
+        set "MVN=D:\IntelliJ IDEA 2026.1.2\plugins\maven\lib\maven3\bin\mvn.cmd"
+    )
+)
+
+set "JAR=target\attendance-system-1.0.0.jar"
+
+rem ---------- 3. 打包 ----------
+if defined MVN (
+    echo [1/2] 正在编译打包...
+    call "%MVN%" -q -DskipTests package
+    if errorlevel 1 (
+        echo [警告] 打包失败，尝试直接用已有 jar 启动。
+    )
+) else (
+    echo [提示] 未找到 Maven，跳过打包，直接使用已有 jar。
+)
+
+if not exist "%JAR%" (
+    echo.
+    echo [错误] 找不到 %JAR%
+    echo        请先在本目录执行:  mvn -DskipTests package
+    echo.
+    pause
+    exit /b 1
+)
+
+rem ---------- 4. 启动 ----------
+echo [2/2] 启动中，访问地址 http://localhost:8080
+echo       首次使用请先登录 8081 超级管理员系统添加管理员账户
+echo.
+"%JAVA%" -Dfile.encoding=UTF-8 -jar "%JAR%"
+
+echo.
+echo 服务已停止。按任意键关闭窗口。
+pause >nul

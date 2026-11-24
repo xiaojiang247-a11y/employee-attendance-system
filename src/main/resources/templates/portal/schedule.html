@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的班表 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">员工系统 / 我的班表</div>
+    <div class="page-head">
+      <div><h1>我的班表</h1><p>按月查看个人班次与作息安排</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card">
+  <div class="card-head"><h2>排班日历</h2>
+    <div class="page-actions">
+      <a class="btn btn-sm" th:href="@{/my/schedule(month=${prevMonth})}">上一个月</a>
+      <b th:text="${month}">月份</b>
+      <a class="btn btn-sm" th:href="@{/my/schedule(month=${nextMonth})}">下一个月</a>
+    </div></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+    <thead><tr><th>日期</th><th>班次</th><th>上班时间</th><th>下班时间</th><th>类型</th><th>来源</th><th>备注</th></tr></thead>
+    <tbody><tr th:each="r : ${rows}">
+      <td><span data-date th:attr="data-date=${r.workDate}"></span></td>
+      <td th:text="${r.shiftName}">-</td>
+      <td th:text="${r.startTime}">-</td><td th:text="${r.endTime}">-</td>
+      <td><span class="badge" th:attr="data-status=${r.isRest != null and r.isRest == 1 ? 'REST' : 'NORMAL'}">-</span></td>
+      <td th:text="${r.source}">-</td><td th:text="${r.remark}">-</td></tr>
+      <tr th:if="${#lists.isEmpty(rows)}"><td colspan="7" class="tbl-empty">本月暂无排班，请联系管理员生成排班</td></tr>
+    </tbody></table></div></div>
+</div>
+
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

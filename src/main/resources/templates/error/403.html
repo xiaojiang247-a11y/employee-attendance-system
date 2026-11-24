@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>无访问权限 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}"></head>
+<body class="err-wrap">
+<div class="err-box">
+  <div class="err-code">403</div>
+  <h2>当前角色无权访问该功能</h2>
+  <p>系统按「超级管理员 / 管理员 / 员工」三级隔离，菜单与 URL 均按角色授权。<br>如需访问，请联系超级管理员调整角色权限。</p>
+  <div class="form-actions" style="justify-content:center;border:0;margin-top:24px">
+    <a class="btn btn-primary" th:href="@{/dashboard}">返回工作台</a>
+    <a class="btn" th:href="@{/my/home}">我的自助</a>
+    <form th:action="@{/logout}" method="post" style="display:inline"><button class="btn btn-soft" type="submit">切换账号</button></form>
+  </div>
+</div>
+</body>
+</html>

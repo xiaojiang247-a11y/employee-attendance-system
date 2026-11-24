@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>系统配置 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">超级管理员系统 / 系统配置</div>
+    <div class="page-head">
+      <div><h1>系统配置</h1><p>运行环境、账户体系与维护入口</p></div>
+      <div class="page-actions" th:if="${false}"></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-2">
+  <div class="card"><div class="card-head"><h2>运行环境</h2></div><div class="card-body">
+    <div class="kv"><b>Java 版本</b><span th:text="${javaVersion}">-</span></div>
+    <div class="kv"><b>操作系统</b><span th:text="${osName}">-</span></div>
+    <div class="kv"><b>业务时区</b><span>Asia/Shanghai · 北京时间 (UTC+8)</span></div>
+    <div class="kv"><b>数据库</b><span>MySQL 8.4 · attendance_db · session +08:00</span></div>
+    <div class="kv"><b>应用框架</b><span>Spring Boot 3.3 / MyBatis / Thymeleaf</span></div>
+    <div class="kv"><b>部署方式</b><span>单实例多子系统 · 统一登录入口</span></div>
+  </div></div>
+  <div class="card"><div class="card-head"><h2>账户体系统计</h2></div><div class="card-body">
+    <div class="kv"><b>角色数</b><span th:text="${roleCount}">0</span></div>
+    <div class="kv"><b>菜单数</b><span th:text="${menuCount}">0</span></div>
+    <div class="kv"><b>超级管理员</b><span th:text="${superCount}">0</span></div>
+    <div class="kv"><b>管理员账户</b><span th:text="${adminCount}">0</span></div>
+    <div class="kv"><b>员工账户</b><span th:text="${employeeCount}">0</span></div>
+  </div></div>
+</div>
+<div class="card"><div class="card-head"><h2>维护入口</h2></div><div class="card-body">
+  <div class="grid grid-3">
+    <a class="btn btn-block" th:href="@{/admin/attendance/summary}">月度汇总与关账</a>
+    <a class="btn btn-block" th:href="@{/admin/leave-balances}">假期额度发放</a>
+    <a class="btn btn-block" th:href="@{/admin/holidays}">工作日历维护</a>
+    <a class="btn btn-block" th:href="@{/admin/locations}">打卡地点围栏</a>
+    <a class="btn btn-block" th:href="@{/admin/system/oper-logs}">系统操作日志</a>
+    <a class="btn btn-block" th:href="@{/admin/login-logs}">登录日志</a>
+  </div>
+  <div class="hint" style="margin-top:14px">以上维护功能属于管理员子系统，超级管理员拥有全部权限；所有变更均写入操作日志。</div>
+</div></div>
+
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

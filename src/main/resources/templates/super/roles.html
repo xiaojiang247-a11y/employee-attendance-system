@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>角色权限 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">超级管理员系统 / 角色权限</div>
+    <div class="page-head">
+      <div><h1>角色权限</h1><p>RBAC 角色、数据范围与菜单授权</p></div>
+      <div class="page-actions" th:if="${false}"></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card"><div class="card-head"><h2>角色与数据范围</h2><span class="sub">角色决定子系统归属与数据可见范围</span></div>
+<div class="card-body flush"><div class="table-wrap"><table class="tbl">
+  <thead><tr><th>ID</th><th>角色编码</th><th>角色名称</th><th>数据范围</th><th>说明</th><th>状态</th><th>菜单授权</th></tr></thead>
+  <tbody><tr th:each="r : ${roles}">
+    <td th:text="${r.id}">0</td><td><code th:text="${r.code}">-</code></td><td><b th:text="${r.name}">-</b></td>
+    <td><span class="badge" th:attr="data-status=${r.dataScope}">-</span></td>
+    <td th:text="${r.description}">-</td><td><span class="badge" th:attr="data-status=${r.enabled != null and r.enabled == 1 ? '1' : '0'}">-</span></td>
+    <td><a class="btn btn-sm" th:href="@{/admin/system/roles/menu/{id}(id=${r.id})}">配置菜单权限</a></td>
+  </tr></tbody></table></div></div></div>
+<div class="grid grid-2">
+  <div class="card"><div class="card-head"><h2>三级子系统映射</h2></div><div class="card-body">
+    <div class="kv"><b>超级管理员系统 /super/**</b><span>SUPER_ADMIN 独占</span></div>
+    <div class="kv"><b>管理员系统 /admin/**</b><span>SUPER_ADMIN / ADMIN / HR / MANAGER</span></div>
+    <div class="kv"><b>员工系统 /my/**</b><span>已登录用户，数据层仅本人</span></div>
+    <div class="hint">URL 拦截由 SecurityConfig 完成，菜单可见性由 sys_role_menu 完成，账户数据垂直越权由 AccountService 断言。</div>
+  </div></div>
+  <div class="card"><div class="card-head"><h2>菜单清单</h2><span class="sub" th:text="'共 ' + ${#lists.size(menus)} + ' 项'">-</span></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+    <thead><tr><th>ID</th><th>名称</th><th>路径</th><th>权限标识</th><th>类型</th></tr></thead>
+    <tbody><tr th:each="m : ${menus}"><td th:text="${m.id}">0</td><td th:text="${m.name}">-</td>
+      <td><code th:text="${m.url}">-</code></td><td th:text="${m.permCode}">-</td>
+      <td><span class="badge" th:attr="data-status=${m.menuType}">-</span></td></tr></tbody></table></div></div></div>
+</div>
+
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

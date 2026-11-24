@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>员工档案 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 组织与人员 / 员工档案</div>
+    <div class="page-head">
+      <div><h1>员工档案</h1><p>员工信息、入职状态与登录账号</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card"><div class="card-head"><h2>员工档案</h2><div class="page-actions">
+  <a class="btn btn-primary btn-sm" th:href="@{/admin/employees/add}">＋ 新增员工</a>
+  <a class="btn btn-sm" th:href="@{/admin/system/users}">员工账号</a></div></div>
+<form class="toolbar" th:action="@{/admin/employees}" method="get"><div class="field grow"><label>工号 / 姓名 / 手机号</label><input type="text" name="keyword" th:value="${keyword}" placeholder="输入关键词"></div><div class="field"><label>部门</label><select name="deptId"><option value="">全部部门</option><option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}" th:selected="${deptId != null and deptId == d.id}">部门</option></select></div><div class="field"><label>状态</label><select name="status"><option value="">全部</option><option value="ACTIVE" th:selected="${status == 'ACTIVE'}">在职</option><option value="PROBATION" th:selected="${status == 'PROBATION'}">试用期</option><option value="RESIGNED" th:selected="${status == 'RESIGNED'}">已离职</option></select></div><button class="btn btn-primary" type="submit">查询</button></form>
+<div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>工号</th><th>姓名</th><th>性别</th><th>部门</th><th>岗位</th><th>入职日期</th><th>用工类型</th><th>状态</th><th>登录账号</th><th>操作</th></tr></thead><tbody><tr th:each="e : ${rows}">
+      <td><code th:text="${e.employeeNo}">-</code></td><td><b th:text="${e.name}">-</b></td><td th:text="${e.gender}">-</td>
+      <td th:text="${e.departmentName}">-</td><td th:text="${e.position}">-</td><td th:text="${e.hireDate}">-</td>
+      <td><span class="badge" th:attr="data-status=${e.employmentType}">-</span></td>
+      <td><span class="badge" th:attr="data-status=${e.status}">-</span></td>
+      <td th:text="${e.loginUsername}">-</td>
+      <td class="nowrap"><a class="btn btn-sm" th:href="@{/admin/employees/detail/{id}(id=${e.id})}">详情</a>
+        <a class="btn btn-sm" th:href="@{/admin/employees/edit/{id}(id=${e.id})}">编辑</a>
+        <form th:action="@{/admin/employees/resign/{id}(id=${e.id})}" method="post" style="display:inline" data-confirm="确认将该员工标记为离职？"><button class="btn btn-sm btn-danger" type="submit" th:if="${e.status != 'RESIGNED'}">离职</button></form></td></tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="10" class="tbl-empty">暂无员工档案，点击「新增员工」录入</td></tr></tbody></table></div></div><div class="pager" th:attr="data-pages=${pageData.totalPages},data-page=${pageData.page},data-total=${pageData.total}"></div></div>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

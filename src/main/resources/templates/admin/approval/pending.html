@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>待办审批 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 审批中心 / 待办</div>
+    <div class="page-head">
+      <div><h1>待办审批</h1><p>统一审批请假、加班、出差、补卡与异常申诉</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card"><div class="card-head"><h2>待办审批</h2><div class="page-actions">
+  <a class="btn btn-sm" th:href="@{/admin/approval/pending}">全部</a>
+  <a class="btn btn-sm" th:each="e : ${counts}" th:href="@{/admin/approval/pending(bizType=${e.key})}"
+     th:text="${typeNames.get(e.key)} + ' (' + ${e.value} + ')'">类型</a></div></div>
+<div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>类型</th><th>申请人</th><th>工号</th><th>部门</th><th>单据摘要</th><th>申请时间</th><th>状态</th><th>操作</th></tr></thead><tbody><tr th:each="t : ${tasks}"><td><span class="tag" th:text="${typeNames.get(t.bizType)}">-</span></td>
+      <td th:text="${t.employeeName}">-</td><td th:text="${t.employeeNo}">-</td><td th:text="${t.departmentName}">-</td>
+      <td th:text="${t.title}">-</td><td><span data-dt th:attr="data-dt=${t.applyTime}"></span></td>
+      <td><span class="badge" th:attr="data-status=${t.status}">-</span></td>
+      <td class="nowrap"><a class="btn btn-sm" th:href="@{/admin/approval/detail(bizType=${t.bizType},bizId=${t.bizId})}">查看</a>
+        <button class="btn btn-sm btn-primary" type="button" onclick="decide(this)" th:attr="data-type=${t.bizType},data-id=${t.bizId},data-title=${t.title}">审批</button></td></tr><tr th:if="${#lists.isEmpty(tasks)}"><td colspan="8" class="tbl-empty">暂无待办审批</td></tr></tbody></table></div></div></div>
+<div class="modal-mask" id="decideModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <div class="modal-head"><h3>审批单据</h3><button type="button" class="icon-btn" onclick="document.getElementById( + mid + ).style.display='none'">✕</button></div>
+    <div class="modal-body"><form th:action="@{/admin/approval/decide}" method="post">
+  <input type="hidden" name="bizType" id="dc-type"><input type="hidden" name="bizId" id="dc-id">
+  <div class="field"><label>单据摘要</label><input type="text" id="dc-title" readonly></div>
+  <div class="field" style="margin-top:14px"><label>审批意见</label><textarea name="remark" rows="3" placeholder="可选"></textarea></div>
+  <div class="form-actions"><button type="button" class="btn" onclick="document.getElementById('decideModal').style.display='none'">取消</button>
+    <button class="btn btn-danger" type="submit" name="approve" value="false">驳回</button>
+    <button class="btn btn-primary" type="submit" name="approve" value="true">通过</button></div></form></div>
+  </div>
+</div>
+<script>function decide(b){var d=b.dataset;document.getElementById('dc-type').value=d.type;document.getElementById('dc-id').value=d.id;document.getElementById('dc-title').value=d.title;document.getElementById('decideModal').style.display='flex';}</script>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

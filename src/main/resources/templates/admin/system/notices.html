@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>公告通知 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 系统管理 / 公告</div>
+    <div class="page-head">
+      <div><h1>公告通知</h1><p>制度通知发布与置顶</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-1-2">
+  <div class="card"><div class="card-head"><h2>发布公告</h2></div><div class="card-body">
+    <form th:action="@{/admin/system/notices/save}" method="post">
+      <input type="hidden" name="id" id="n-id">
+      <div class="field req"><label>标题</label><input type="text" name="title" id="n-title" required></div>
+      <div class="field" style="margin-top:14px"><label>类型</label><select name="noticeType" id="n-type">
+        <option value="NOTICE">通知</option><option value="POLICY">制度</option><option value="URGENT">紧急</option></select></div>
+      <div class="field" style="margin-top:14px"><label>是否置顶</label><select name="pinned" id="n-pinned"><option value="0">否</option><option value="1">是</option></select></div>
+      <div class="field" style="margin-top:14px"><label>正文</label><textarea name="content" id="n-content" rows="6" required></textarea></div>
+      <div class="form-actions"><button type="button" class="btn" onclick="resetNotice()">清空</button><button class="btn btn-primary" type="submit">发布</button></div></form></div></div>
+  <div class="card"><div class="card-head"><h2>公告列表</h2></div><div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>标题</th><th>类型</th><th>发布人</th><th>置顶</th><th>浏览</th><th>发布时间</th><th>操作</th></tr></thead><tbody><tr th:each="n : ${rows}"><td><b th:text="${n.title}">-</b><div class="muted small" th:text="${n.content}">-</div></td>
+      <td><span class="badge" th:attr="data-status=${n.noticeType}">-</span></td><td th:text="${n.publisher}">-</td>
+      <td><span class="badge" th:attr="data-status=${n.pinned != null and n.pinned == 1 ? '1' : '0'}">-</span></td>
+      <td th:text="${n.viewCount}">0</td><td><span data-dt th:attr="data-dt=${n.publishTime}"></span></td>
+      <td><form th:action="@{/admin/system/notices/delete/{id}(id=${n.id})}" method="post" data-confirm="确认删除该公告？"><button class="btn btn-sm btn-danger" type="submit">删除</button></form></td></tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="7" class="tbl-empty">暂无公告</td></tr></tbody></table></div></div></div>
+</div>
+<script>function resetNotice(){['n-id','n-title','n-content'].forEach(function(i){document.getElementById(i).value='';});}</script>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

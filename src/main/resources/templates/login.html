@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>统一登录 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body class="auth-wrap">
+<!-- 品牌区必须是 .auth-wrap 的直接子元素：.auth-wrap 是两列 grid，
+     放进 .auth-panel 内部会导致右半屏空白、品牌块与表单上下堆叠。 -->
+<div class="auth-brand">
+  <div class="logo">
+    <div class="brand-mark" style="width:42px;height:42px;font-size:17px">勤</div>
+    <span>企业考勤</span>
+  </div>
+  <h1>企业员工考勤管理系统</h1>
+  <p class="desc">Enterprise Employee Attendance Management System</p>
+  <div class="auth-feats">
+    <div><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/></svg><span>三级权限隔离 · 统一身份认证</span></div>
+    <div><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>班次排班 · 打卡围栏 · 工时核算</span></div>
+    <div><svg class="ico" viewBox="0 0 24 24"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg><span>审批流 · 月度关账 · 统计报表</span></div>
+    <div><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>组织人事 · 假期额度 · 操作审计</span></div>
+  </div>
+  <div class="auth-foot">基于 Java 的企业员工考勤管理系统设计与实现</div>
+</div>
+<div class="auth-panel">
+  <div class="auth-form">
+    <h2 th:text="${portRoleLabel != null} ? ${portRoleLabel} + ' · 登录' : '统一登录入口'">统一登录入口</h2>
+    <p class="muted" th:text="${portRoleLabel != null} ? '本端口仅供' + ${portRoleLabel} + '使用，账号角色不匹配将被拒绝' : '请使用管理员分配的账号登录，系统按角色自动进入对应子系统'">请使用管理员分配的账号登录</p>
+    <div class="alert alert-error" th:if="${errorMsg}" th:text="${errorMsg}"></div>
+    <div class="alert alert-success" th:if="${logoutMsg}" th:text="${logoutMsg}"></div>
+    <form th:action="@{/login}" method="post">
+      <div class="field"><label for="username">登录账号</label><input id="username" type="text" name="username" placeholder="请输入账号" autocomplete="username" required autofocus></div>
+      <div class="field" style="margin-top:14px"><label for="password">登录密码</label><input id="password" type="password" name="password" placeholder="请输入密码" autocomplete="current-password" required></div>
+      <button class="btn btn-primary btn-block btn-lg" type="submit" style="margin-top:22px">登 录</button>
+    </form>
+    <div class="auth-tip">
+      <b>子系统说明</b>
+      <div>· 超级管理员：管理管理员账户、角色权限与账户操作记录</div>
+      <div>· 管理员：管理员工账户、组织人事、考勤规则与审批报表</div>
+      <div>· 员工：查看本人考勤、排班、假期余额与自助申请</div>
+    </div>
+    <div class="auth-foot">忘记密码请联系所属管理员重置 · 登录行为将被审计</div>
+  </div>
+</div>
+</body>
+</html>

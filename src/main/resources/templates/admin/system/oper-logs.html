@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>操作日志 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 系统管理 / 操作日志</div>
+    <div class="page-head">
+      <div><h1>操作日志</h1><p>请求级审计 · 时间统一北京时间</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-3">
+  <div class="kpi blue"><div><div class="kpi-label">累计日志</div><div class="kpi-value" th:text="${total}">0</div></div></div>
+  <div class="kpi green"><div><div class="kpi-label">今日操作</div><div class="kpi-value" th:text="${today}">0</div></div></div>
+  <div class="kpi amber"><div><div class="kpi-label">时区</div><div class="kpi-value" style="font-size:18px">UTC+8</div><div class="kpi-foot">北京时间</div></div></div>
+</div>
+<div class="card"><div class="card-head"><h2>系统操作日志</h2></div>
+<form class="toolbar" th:action="@{/admin/system/oper-logs}" method="get"><div class="field grow"><label>操作人 / 路径 / 参数</label><input type="text" name="keyword" th:value="${keyword}"></div><button class="btn btn-primary" type="submit">查询</button></form>
+<div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>时间</th><th>操作人</th><th>模块</th><th>操作</th><th>请求方式</th><th>URL</th><th>IP</th><th>耗时</th><th>结果</th></tr></thead><tbody><tr th:each="l : ${rows}"><td><span data-dt th:attr="data-dt=${l.createTime}"></span></td>
+      <td th:text="${l.username}">-</td><td th:text="${l.module}">-</td><td th:text="${l.operation}">-</td>
+      <td th:text="${l.requestMethod}">-</td><td><code th:text="${l.requestUrl}">-</code></td>
+      <td th:text="${l.ip}">-</td><td th:text="${l.costMs} + ' ms'">-</td>
+      <td><span class="badge" th:attr="data-status=${l.result}">-</span></td></tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="9" class="tbl-empty">暂无操作日志</td></tr></tbody></table></div></div></div>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>班次管理 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 考勤管理 / 班次</div>
+    <div class="page-head">
+      <div><h1>班次管理</h1><p>上下班时间、宽限与工时规则</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-2-1">
+  <div class="card"><div class="card-head"><h2>班次列表</h2><button class="btn btn-primary btn-sm" onclick="openShift()">＋ 新增班次</button></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>编码</th><th>班次名称</th><th>上班</th><th>下班</th><th>迟到宽限</th><th>早退宽限</th><th>弹性</th><th>标准工时</th><th>跨天</th><th>人数</th><th>状态</th><th>操作</th></tr></thead><tbody><tr th:each="s : ${shifts}"><td><code th:text="${s.code}">-</code></td><td><b th:text="${s.name}">-</b></td>
+      <td th:text="${s.startTime}">-</td><td th:text="${s.endTime}">-</td><td th:text="${s.lateGrace} + ' 分'">-</td>
+      <td th:text="${s.earlyGrace} + ' 分'">-</td><td th:text="${s.flexMinutes} + ' 分'">-</td>
+      <td th:text="${s.workHours} + ' h'">-</td><td th:text="${s.crossDay == 1 ? '是' : '否'}">-</td>
+      <td th:text="${s.empCount}">0</td><td><span class="badge" th:attr="data-status=${s.enabled != null and s.enabled == 1 ? '1' : '0'}">-</span></td>
+      <td class="nowrap"><button class="btn btn-sm" type="button" onclick="editShift(this)"
+          th:attr="data-id=${s.id},data-code=${s.code},data-name=${s.name},data-start=${s.startTime},data-end=${s.endTime},data-lg=${s.lateGrace},data-eg=${s.earlyGrace},data-flex=${s.flexMinutes},data-hours=${s.workHours},data-cross=${s.crossDay},data-color=${s.color},data-remark=${s.remark},data-enabled=${s.enabled}">编辑</button>
+        <form th:action="@{/admin/shifts/delete/{id}(id=${s.id})}" method="post" style="display:inline" data-confirm="确认删除该班次？"><button class="btn btn-sm btn-danger" type="submit">删除</button></form></td></tr><tr th:if="${#lists.isEmpty(shifts)}"><td colspan="12" class="tbl-empty">暂无班次，请先创建</td></tr></tbody></table></div></div></div>
+  <div class="card"><div class="card-head"><h2>班次规则</h2></div><div class="card-body">
+    <div class="hint">· 迟到 / 早退宽限：在宽限分钟内不计异常，超出后按实际分钟数记入月度汇总。</div>
+    <div class="hint">· 弹性工时：允许在弹性范围内抵消化打卡时间偏差。</div>
+    <div class="hint">· 跨天班次：下班时间位于次日，工时核算自动加 24 小时。</div>
+  </div></div>
+</div>
+<div class="modal-mask" id="shiftModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <div class="modal-head"><h3>新增 / 编辑班次</h3><button type="button" class="icon-btn" onclick="document.getElementById( + mid + ).style.display='none'">✕</button></div>
+    <div class="modal-body"><form th:action="@{/admin/shifts/save}" method="post">
+  <input type="hidden" name="id" id="s-id">
+  <div class="form-grid">
+    <div class="field req"><label>班次编码</label><input type="text" name="code" id="s-code" required></div>
+    <div class="field req"><label>班次名称</label><input type="text" name="name" id="s-name" required></div>
+    <div class="field req"><label>上班时间</label><input type="time" name="startTime" id="s-start" value="09:00" required></div>
+    <div class="field req"><label>下班时间</label><input type="time" name="endTime" id="s-end" value="18:00" required></div>
+    <div class="field"><label>迟到宽限(分)</label><input type="number" name="lateGrace" id="s-lg" value="5"></div>
+    <div class="field"><label>早退宽限(分)</label><input type="number" name="earlyGrace" id="s-eg" value="5"></div>
+    <div class="field"><label>弹性(分)</label><input type="number" name="flexMinutes" id="s-flex" value="0"></div>
+    <div class="field"><label>标准工时(h)</label><input type="number" step="0.5" name="workHours" id="s-hours" value="8"></div>
+    <div class="field"><label>跨天</label><select name="crossDay" id="s-cross"><option value="0">否</option><option value="1">是</option></select></div>
+    <div class="field"><label>标识色</label><input type="text" name="color" id="s-color" value="#4f6bed"></div>
+    <div class="field"><label>状态</label><select name="enabled" id="s-enabled"><option value="1">启用</option><option value="0">停用</option></select></div>
+    <div class="field full"><label>备注</label><textarea name="remark" id="s-remark" rows="2"></textarea></div>
+  </div><div class="form-actions"><button type="button" class="btn" onclick="document.getElementById('shiftModal').style.display='none'">取消</button><button class="btn btn-primary" type="submit">保存</button></div>
+</form></div>
+  </div>
+</div>
+<script>
+function openShift(){['s-id','s-code','s-name','s-remark'].forEach(function(i){document.getElementById(i).value='';});document.getElementById('shiftModal').style.display='flex';}
+function editShift(b){var d=b.dataset,map={'s-id':'id','s-code':'code','s-name':'name','s-start':'start','s-end':'end','s-lg':'lg','s-eg':'eg','s-flex':'flex','s-hours':'hours','s-cross':'cross','s-color':'color','s-remark':'remark','s-enabled':'enabled'};
+  for(var i in map){var v=d[map[i]];document.getElementById(i).value=(v==='null'||v===undefined)?'':v;}document.getElementById('shiftModal').style.display='flex';}
+</script>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

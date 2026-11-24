@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>员工档案表单 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 组织与人员 / 档案维护</div>
+    <div class="page-head">
+      <div><h1>员工档案表单</h1><p>档案字段与员工账号同步创建</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card"><div class="card-head"><h2 th:text="${formTitle}">员工档案</h2>
+  <a class="btn btn-sm" th:href="@{/admin/employees}">返回列表</a></div>
+<div class="card-body">
+  <form th:action="${employee.id == null ? '/admin/employees/save' : '/admin/employees/update'}" method="post">
+    <input type="hidden" name="id" th:value="${employee.id}">
+    <div class="form-grid">
+      <div class="field req"><label>员工工号</label><input type="text" name="employeeNo" th:value="${employee.employeeNo}" required th:readonly="${employee.id != null}"></div>
+      <div class="field req"><label>姓名</label><input type="text" name="name" th:value="${employee.name}" required></div>
+      <div class="field"><label>性别</label><select name="gender"><option value="男" th:selected="${employee.gender == '男'}">男</option><option value="女" th:selected="${employee.gender == '女'}">女</option></select></div>
+      <div class="field"><label>手机号</label><input type="text" name="phone" th:value="${employee.phone}"></div>
+      <div class="field"><label>邮箱</label><input type="email" name="email" th:value="${employee.email}"></div>
+      <div class="field req"><label>所属部门</label><select name="departmentId" required>
+        <option value="">请选择</option><option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}" th:selected="${employee.departmentId != null and employee.departmentId == d.id}">部门</option></select></div>
+      <div class="field"><label>岗位</label><input type="text" name="position" th:value="${employee.position}"></div>
+      <div class="field"><label>考勤组</label><select name="groupId"><option value="">未分配</option>
+        <option th:each="g : ${groups}" th:value="${g.id}" th:text="${g.name}" th:selected="${employee.groupId != null and employee.groupId == g.id}">考勤组</option></select></div>
+      <div class="field"><label>默认班次</label><select name="shiftId"><option value="">跟随考勤组</option>
+        <option th:each="s : ${shifts}" th:value="${s.id}" th:text="${s.name}" th:selected="${employee.shiftId != null and employee.shiftId == s.id}">班次</option></select></div>
+      <div class="field"><label>入职日期</label><input type="date" name="hireDate" th:value="${employee.hireDate}"></div>
+      <div class="field"><label>用工类型</label><select name="employmentType">
+        <option value="REGULAR" th:selected="${employee.employmentType == 'REGULAR'}">正式</option>
+        <option value="PROBATION" th:selected="${employee.employmentType == 'PROBATION'}">试用期</option>
+        <option value="INTERN" th:selected="${employee.employmentType == 'INTERN'}">实习</option></select></div>
+      <div class="field"><label>学历</label><input type="text" name="education" th:value="${employee.education}"></div>
+      <div class="field"><label>紧急联系人</label><input type="text" name="emergencyContact" th:value="${employee.emergencyContact}"></div>
+      <div class="field"><label>紧急联系电话</label><input type="text" name="emergencyPhone" th:value="${employee.emergencyPhone}"></div>
+      <div class="field full"><label>联系地址</label><input type="text" name="address" th:value="${employee.address}"></div>
+      <div class="field full"><label>备注</label><textarea name="remark" rows="2" th:text="${employee.remark}"></textarea></div>
+    </div>
+    <div th:if="${employee.id == null}" style="margin-top:22px;padding-top:18px;border-top:1px solid var(--line)">
+      <h2 style="font-size:15px;margin:0 0 14px">同步创建员工登录账号（可选）</h2>
+      <div class="form-grid">
+        <div class="field"><label>登录账号</label><input type="text" name="loginUsername" placeholder="留空则不创建"></div>
+        <div class="field"><label>初始密码</label><input type="text" name="loginPassword" value="123456"></div>
+      </div>
+      <div class="hint">账号将归属员工子系统，员工可登录查看本人考勤并提交申请。</div>
+    </div>
+    <div class="form-actions"><a class="btn" th:href="@{/admin/employees}">取消</a><button class="btn btn-primary" type="submit">保存档案</button></div>
+  </form></div></div>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>申请台账 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 审批中心 / 台账</div>
+    <div class="page-head">
+      <div><h1>申请台账</h1><p>加班、出差、补卡与异常申诉台账</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card"><div class="card-head"><h2 th:text="${title}">申请台账</h2><div class="page-actions">
+  <a class="btn btn-sm" th:href="@{/admin/overtime}">加班</a><a class="btn btn-sm" th:href="@{/admin/trips}">出差</a>
+  <a class="btn btn-sm" th:href="@{/admin/makeups}">补卡</a><a class="btn btn-sm" th:href="@{/admin/appeals}">申诉</a></div></div>
+<div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>申请人</th><th>工号</th><th>部门</th><th>日期</th><th>内容</th><th>时长/天数</th><th>申请时间</th><th>状态</th><th>审批意见</th></tr></thead><tbody><tr th:each="r : ${rows}"><td th:text="${r['employeeName']}">-</td><td th:text="${r['employeeNo']}">-</td>
+      <td th:text="${r['departmentName']}">-</td>
+      <td th:switch="${type}">
+        <span th:case="'OVERTIME'" th:text="${r['otDate']}">-</span>
+        <span th:case="'TRIP'" th:text="${r['startDate']} + '~' + ${r['endDate']}">-</span>
+        <span th:case="'MAKEUP'" th:text="${r['missDate']}">-</span>
+        <span th:case="'APPEAL'" th:text="${r['appealDate']}">-</span><span th:case="*">-</span></td>
+      <td th:text="${r['reason']}">-</td>
+      <td th:text="${r['hours'] != null ? r['hours'] : (r['days'] != null ? r['days'] : '-')}">-</td>
+      <td><span data-dt th:attr="data-dt=${r['applyTime']}"></span></td>
+      <td><span class="badge" th:attr="data-status=${r['status']}">-</span></td>
+      <td th:text="${r['approveRemark']}">-</td></tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="9" class="tbl-empty">暂无申请记录</td></tr></tbody></table></div></div></div>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

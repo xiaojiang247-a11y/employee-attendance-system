@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>部门架构 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 组织与人员 / 部门架构</div>
+    <div class="page-head">
+      <div><h1>部门架构</h1><p>组织架构与部门负责人</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-2-1">
+  <div class="card"><div class="card-head"><h2>部门列表</h2><div class="page-actions"><button class="btn btn-primary btn-sm" onclick="openDept()">＋ 新增部门</button></div></div>
+    <div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>ID</th><th>部门编码</th><th>部门名称</th><th>上级部门</th><th>负责人</th><th>在职人数</th><th>排序</th><th>操作</th></tr></thead><tbody><tr th:each="d : ${departments}">
+      <td th:text="${d.id}">0</td><td><code th:text="${d.code}">-</code></td><td><b th:text="${d.name}">-</b></td>
+      <td th:text="${d.parentId == 0 ? '顶级部门' : d.parentId}">-</td><td th:text="${d.leaderName}">-</td>
+      <td th:text="${d.empCount}">0</td><td th:text="${d.sortNo}">0</td>
+      <td class="nowrap"><button class="btn btn-sm" type="button" onclick="editDept(this)"
+          th:attr="data-id=${d.id},data-code=${d.code},data-name=${d.name},data-parent=${d.parentId},data-sort=${d.sortNo},data-desc=${d.description}">编辑</button>
+        <form th:action="@{/admin/org/departments/delete/{id}(id=${d.id})}" method="post" style="display:inline" data-confirm="确认删除该部门？"><button class="btn btn-sm btn-danger" type="submit">删除</button></form></td></tr><tr th:if="${#lists.isEmpty(departments)}"><td colspan="8" class="tbl-empty">暂无部门，请先创建</td></tr></tbody></table></div></div></div>
+  <div class="card"><div class="card-head"><h2>组织说明</h2></div><div class="card-body">
+    <div class="hint">· 部门支持两级结构，可指定部门负责人，负责人自动获得本部门数据范围。</div>
+    <div class="hint">· 部门下存在子部门或在职员工时不可删除，需先调整层级或转移员工。</div>
+    <div class="hint">· 员工档案中的部门决定考勤统计的部门维度与审批数据范围。</div>
+    <div class="kv" style="margin-top:12px"><div><span class="k">部门数</span><span class="v" th:text="${#lists.size(departments)}">0</span></div>
+      <div><span class="k">在职员工</span><span class="v" th:text="${#lists.size(employees)}">0</span></div></div>
+  </div></div>
+</div>
+<div class="modal-mask" id="deptModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <div class="modal-head"><h3>新增 / 编辑部门</h3><button type="button" class="icon-btn" onclick="document.getElementById( + mid + ).style.display='none'">✕</button></div>
+    <div class="modal-body"><form th:action="@{/admin/org/departments/save}" method="post">
+  <input type="hidden" name="id" id="d-id">
+  <div class="form-grid">
+    <div class="field req"><label>部门编码</label><input type="text" name="code" id="d-code" required></div>
+    <div class="field req"><label>部门名称</label><input type="text" name="name" id="d-name" required></div>
+    <div class="field"><label>上级部门</label><select name="parentId" id="d-parent"><option value="0">顶级部门</option>
+      <option th:each="d : ${allDepts}" th:value="${d.id}" th:text="${d.name}">部门</option></select></div>
+    <div class="field"><label>负责人</label><select name="leaderId" id="d-leader"><option value="">未指定</option>
+      <option th:each="e : ${employees}" th:value="${e.id}" th:text="${e.name}">员工</option></select></div>
+    <div class="field"><label>排序号</label><input type="number" name="sortNo" id="d-sort" value="0"></div>
+    <div class="field full"><label>部门说明</label><textarea name="description" id="d-desc" rows="3"></textarea></div>
+  </div><div class="form-actions"><button type="button" class="btn" onclick="document.getElementById('deptModal').style.display='none'">取消</button><button class="btn btn-primary" type="submit">保存</button></div>
+</form></div>
+  </div>
+</div>
+<script>
+function openDept(){['d-id','d-code','d-name','d-desc'].forEach(function(i){document.getElementById(i).value='';});document.getElementById('d-parent').value='0';document.getElementById('d-sort').value='0';document.getElementById('deptModal').style.display='flex';}
+function editDept(b){var d=b.dataset;['d-id','d-code','d-name','d-sort','d-desc'].forEach(function(i){var k={'d-id':'id','d-code':'code','d-name':'name','d-sort':'sort','d-desc':'desc'}[i];document.getElementById(i).value=(d[k]==='null'||d[k]===undefined)?'':d[k];});document.getElementById('d-parent').value=d.parent||'0';document.getElementById('deptModal').style.display='flex';}
+</script>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

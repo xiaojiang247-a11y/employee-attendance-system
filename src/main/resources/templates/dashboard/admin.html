@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>管理员工作台 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">首页 / 管理员工作台</div>
+    <div class="page-head">
+      <div><h1>管理员工作台</h1><p>考勤业务全景 · KPI / 趋势 / 待办 / 预警</p></div>
+      <div class="page-actions" th:if="${false}"></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-4">
+  <div class="kpi blue"><div><div class="kpi-label">在职员工</div><div class="kpi-value" th:text="${totalEmployees}">0</div><div class="kpi-foot">全公司在册人数</div></div><div class="kpi-icon"><svg class="ico ico-lg" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/></svg></div></div>
+  <div class="kpi green"><div><div class="kpi-label">今日打卡</div><div class="kpi-value" th:text="${todayCheckIn}">0</div><div class="kpi-foot">出勤率 <em th:text="${attendanceRate} + '%'">0%</em></div></div><div class="kpi-icon"><svg class="ico ico-lg" viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"/></svg></div></div>
+  <div class="kpi amber"><div><div class="kpi-label">今日迟到 / 旷工</div><div class="kpi-value"><span th:text="${todayLate}">0</span><span class="kpi-unit">/</span><span th:text="${todayAbsent}">0</span></div><div class="kpi-foot">需关注的异常考勤</div></div><div class="kpi-icon"><svg class="ico ico-lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div></div>
+  <div class="kpi purple"><div><div class="kpi-label">待办审批</div><div class="kpi-value" th:text="${pendingAll}">0</div><div class="kpi-foot">请假 / 加班 / 出差 / 补卡 / 申诉</div></div><div class="kpi-icon"><svg class="ico ico-lg" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/></svg></div></div>
+</div>
+
+<div class="grid grid-2-1">
+  <div class="card">
+    <div class="card-head"><h2>近 30 日考勤趋势</h2><span class="sub">打卡人次 / 迟到 / 旷工</span></div>
+    <div class="card-body"><div class="chart-box lg" data-chart="line" data-source="trend" data-x="label" data-y="present,late,absent" data-names="出勤,迟到,旷工" data-colors="#4f6bed,#f59f00,#fa5252"></div><div class="legend" id="legend-trend"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>考勤状态分布</h2><span class="sub">近 30 日</span></div>
+    <div class="card-body"><div class="donut-wrap"><div class="chart-box sm" data-chart="donut" data-source="statusDist" data-x="label"></div><div class="donut-legend" id="legend-statusDist"></div></div></div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-head"><h2>部门出勤率排行</h2><a class="btn btn-sm" th:href="@{/admin/report}">查看报表</a></div>
+    <div class="card-body"><div class="chart-box" data-chart="hbar" data-source="deptRank" data-x="label" data-y="rate"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>加班时长排行</h2><span class="sub">近 90 日已审批</span></div>
+    <div class="card-body"><div class="chart-box" data-chart="hbar" data-source="overtimeRanking" data-x="label" data-y="cnt"></div></div>
+  </div>
+</div>
+
+<div class="grid grid-2-1">
+  <div class="card">
+    <div class="card-head"><h2>待办审批</h2><a class="btn btn-sm btn-primary" th:href="@{/admin/approval/pending}">去处理</a></div>
+    <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+      <thead><tr><th>类型</th><th>申请人</th><th>部门</th><th>摘要</th><th>申请时间</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr th:each="t : ${pendingTasks}">
+          <td><span class="tag" th:text="${typeNames != null ? typeNames.get(t.bizType) : t.bizType}">类型</span></td>
+          <td th:text="${t.employeeName}">姓名</td><td th:text="${t.departmentName}">部门</td>
+          <td th:text="${t.title}">摘要</td><td><span data-dt th:attr="data-dt=${t.applyTime}"></span></td>
+          <td><span class="badge" th:attr="data-status=${t.status}">待审批</span></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(pendingTasks)}"><td colspan="6" class="tbl-empty">暂无待办审批</td></tr>
+      </tbody></table></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>公告通知</h2><a class="btn btn-sm" th:href="@{/admin/system/notices}">全部</a></div>
+    <div class="card-body"><ul class="mini-list">
+      <li th:each="n : ${notices}"><span class="badge" th:attr="data-status=${n.noticeType}" th:text="${n.noticeType}">通知</span><span th:text="${n.title}">标题</span></li>
+      <li th:if="${#lists.isEmpty(notices)}" class="muted">暂无公告</li>
+    </ul></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>异常考勤预警</h2><span class="sub">近 30 日迟到 / 旷工 / 缺卡次数较多的员工</span></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+    <thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>迟到</th><th>旷工</th><th>缺卡</th><th>记录数</th></tr></thead>
+    <tbody><tr th:each="r : ${risk}">
+      <td th:text="${r.employee_no}">-</td><td th:text="${r.label}">-</td><td th:text="${r.dept}">-</td>
+      <td th:text="${r.late_cnt}">0</td><td th:text="${r.absent_cnt}">0</td><td th:text="${r.missing_cnt}">0</td>
+      <td th:text="${r.total}">0</td></tr>
+      <tr th:if="${#lists.isEmpty(risk)}"><td colspan="7" class="tbl-empty">暂无异常记录</td></tr>
+    </tbody></table></div></div>
+</div>
+
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:inline="javascript">/*<![CDATA[*/
+window.DASH = {
+  trend: /*[[${trend}]]*/ [],
+  weekTrend: /*[[${weekTrend}]]*/ [],
+  statusDist: /*[[${statusDist}]]*/ [],
+  deptRank: /*[[${deptRank}]]*/ [],
+  headcountByDept: /*[[${headcountByDept}]]*/ [],
+  leaveUsage: /*[[${leaveUsage}]]*/ [],
+  overtimeRanking: /*[[${overtimeRanking}]]*/ [],
+  monthlyTrend: /*[[${monthlyTrend}]]*/ [],
+  todayDept: /*[[${todayDept}]]*/ []
+};
+/*]]>*/</script>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

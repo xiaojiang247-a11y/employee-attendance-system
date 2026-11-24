@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>页面不存在 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}"></head>
+<body class="err-wrap">
+<div class="err-box">
+  <div class="err-code">404</div>
+  <h2>页面不存在或已下线</h2>
+  <p>请检查地址是否正确。三个角色端分别使用 8081（超级管理员）、8082（管理员）、8083（员工），
+     跨端口访问会被拒绝。</p>
+  <div class="form-actions" style="justify-content:center;border:0;margin-top:24px">
+    <a class="btn btn-primary" th:href="@{/login}">返回登录</a>
+    <a class="btn" href="javascript:history.back()">返回上一页</a>
+  </div>
+</div>
+</body>
+</html>

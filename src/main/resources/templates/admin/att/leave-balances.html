@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>假期余额 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 考勤管理 / 假期余额</div>
+    <div class="page-head">
+      <div><h1>假期余额</h1><p>按年度发放与人工调整</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card"><div class="card-head"><h2>员工假期余额</h2><div class="page-actions">
+  <form th:action="@{/admin/leave-balances/grant}" method="post" style="display:inline-flex;gap:8px;align-items:center">
+    <input type="number" name="year" th:value="${year}" style="width:100px"><button class="btn btn-sm btn-primary" type="submit">按年度批量发放额度</button></form></div></div>
+<form class="toolbar" th:action="@{/admin/leave-balances}" method="get"><div class="field grow"><label>姓名 / 工号</label><input type="text" name="keyword" th:value="${keyword}"></div><div class="field"><label>部门</label><select name="deptId"><option value="">全部部门</option><option th:each="d : ${departments}" th:value="${d.id}" th:text="${d.name}" th:selected="${deptId != null and deptId == d.id}">部门</option></select></div><div class="field"><label>年度</label><input type="number" name="year" th:value="${year}"></div><button class="btn btn-primary" type="submit">查询</button></form>
+<div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>工号</th><th>姓名</th><th>假别</th><th>年度</th><th>总额度</th><th>已使用</th><th>剩余</th><th>调整</th></tr></thead><tbody><tr th:each="b : ${rows}"><td th:text="${b.employeeNo}">-</td><td th:text="${b.employeeName}">-</td>
+      <td th:text="${b.typeName}">-</td><td th:text="${b.yearNum}">-</td><td th:text="${b.totalDays}">0</td>
+      <td th:text="${b.usedDays}">0</td><td><b th:text="${b.remainDays}">0</b></td>
+      <td><button class="btn btn-sm" type="button" onclick="adjust(this)" th:attr="data-id=${b.id},data-name=${b.employeeName}">调整</button></td></tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="8" class="tbl-empty">暂无余额数据，请先批量发放</td></tr></tbody></table></div></div><div class="pager" th:attr="data-pages=${pageData.totalPages},data-page=${pageData.page},data-total=${pageData.total}"></div></div>
+<div class="modal-mask" id="adjustModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <div class="modal-head"><h3>调整假期额度</h3><button type="button" class="icon-btn" onclick="document.getElementById( + mid + ).style.display='none'">✕</button></div>
+    <div class="modal-body"><form th:action="@{/admin/leave-balances/adjust}" method="post">
+  <input type="hidden" name="id" id="adj-id">
+  <div class="field"><label>员工</label><input type="text" id="adj-name" readonly></div>
+  <div class="field" style="margin-top:14px"><label>增减天数（可为负数）</label><input type="number" step="0.5" name="days" required></div>
+  <div class="form-actions"><button type="button" class="btn" onclick="document.getElementById('adjustModal').style.display='none'">取消</button><button class="btn btn-primary" type="submit">确认调整</button></div></form></div>
+  </div>
+</div>
+<script>function adjust(b){document.getElementById('adj-id').value=b.dataset.id;document.getElementById('adj-name').value=b.dataset.name;document.getElementById('adjustModal').style.display='flex';}</script>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside class="sidebar" id="sidebar" th:fragment="sidebar">
+  <div class="brand">
+    <div class="brand-mark">勤</div>
+    <div class="brand-txt"><b>企业考勤管理</b><small>ATTENDANCE SYSTEM</small></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-group" th:each="g : ${menus}">
+      <div class="nav-group-title" th:text="${g.name}">分组</div>
+      <a class="nav-link" th:each="c : ${g.children}" th:href="${c.url}"
+         th:classappend="${requestUri != null and c.url != null and !#strings.isEmpty(c.url) and #strings.startsWith(requestUri, c.url)} ? 'active' : ''">
+        <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>
+        <span th:text="${c.name}">菜单</span>
+      </a>
+    </div>
+    <div class="nav-group" th:if="${menus == null or #lists.isEmpty(menus)}">
+      <div class="nav-group-title">快捷入口</div>
+      <a class="nav-link" th:if="${navRole != 'EMPLOYEE'}" th:href="@{/dashboard}"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg><span>管理员工作台</span></a>
+      <a class="nav-link" th:href="@{/my/home}"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg><span>我的工作台</span></a>
+    </div>
+  </nav>
+  <div class="side-foot">
+    <div class="user-chip">
+      <div class="avatar" th:text="${currentUser != null and currentUser.realName != null ? #strings.substring(currentUser.realName,0,1) : 'U'}">U</div>
+      <div>
+        <b th:text="${currentUser != null ? currentUser.realName : '未登录'}">用户</b>
+        <small><span class="badge plain" th:attr="data-status=${navRole}" th:text="${navRole}">角色</span></small>
+      </div>
+    </div>
+    <form th:action="@{/logout}" method="post" style="margin-top:10px">
+      <button type="submit" class="logout-link">退出登录 / Logout</button>
+    </form>
+  </div>
+</aside>
+
+<header class="topbar" th:fragment="topbar">
+  <button type="button" class="icon-btn" data-sidebar-toggle aria-label="收起或展开侧边栏" title="收起/展开侧边栏">
+    <svg class="ico" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+  </button>
+  <div class="crumbs"><b>企业员工考勤管理系统</b><span class="crumb-sep">/</span><span>统一登录 · 三级权限隔离</span></div>
+  <div class="top-spacer"></div>
+  <div class="top-date"><span class="muted">北京时间</span> <b data-clock></b></div>
+  <!-- 铃铛按角色回各自工作台：原先固定写 /my/home，超管/管理员点一下就被 /my/** 拦到登录页 -->
+  <a class="bell" th:with="homeUrl=${navRole == 'EMPLOYEE' ? '/my/home' : (navRole == 'SUPER_ADMIN' ? '/super/dashboard' : '/dashboard')}"
+     th:href="@{${homeUrl}}" title="我的工作台">
+    <svg class="ico" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+    <span class="dotc" th:if="${pendingCount != null and pendingCount > 0}"></span>
+  </a>
+  <div class="user-chip">
+    <div class="avatar" th:text="${currentUser != null and currentUser.realName != null ? #strings.substring(currentUser.realName,0,1) : 'U'}">U</div>
+    <div><b th:text="${currentUser != null ? currentUser.username : ''}">user</b><small th:text="${currentUser != null ? currentUser.roleName : ''}">角色</small></div>
+  </div>
+</header>
+
+<footer class="footer" th:fragment="footer">
+  <span>© 2026 企业员工考勤管理系统 · Spring Boot + MyBatis + Thymeleaf + MySQL</span>
+  <span>超级管理员 / 管理员 / 员工 三级权限隔离</span>
+</footer>
+</body>
+</html>

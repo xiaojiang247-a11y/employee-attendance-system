@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>假别与额度 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 考勤管理 / 假别</div>
+    <div class="page-head">
+      <div><h1>假别与额度</h1><p>假别定义、年度额度与结转规则</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-1-2">
+  <div class="card"><div class="card-head"><h2>新增 / 编辑假别</h2></div><div class="card-body">
+    <form th:action="@{/admin/leave-types/save}" method="post">
+      <input type="hidden" name="id" id="lt-id">
+      <div class="field req"><label>假别编码</label><input type="text" name="code" id="lt-code" required placeholder="如 ANNUAL"></div>
+      <div class="field" style="margin-top:14px"><label>假别名称</label><input type="text" name="name" id="lt-name" required></div>
+      <div class="field" style="margin-top:14px"><label>年度额度(天)</label><input type="number" step="0.5" name="annualQuota" id="lt-quota" value="5"></div>
+      <div class="field" style="margin-top:14px"><label>是否带薪</label><select name="paid" id="lt-paid"><option value="1">带薪</option><option value="0">无薪</option></select></div>
+      <div class="field" style="margin-top:14px"><label>是否需审批</label><select name="needApproval" id="lt-appr"><option value="1">需要</option><option value="0">不需要</option></select></div>
+      <div class="field" style="margin-top:14px"><label>是否结转</label><select name="carryForward" id="lt-carry"><option value="0">不结转</option><option value="1">结转次年</option></select></div>
+      <div class="field" style="margin-top:14px"><label>扣减规则</label><input type="text" name="deductRule" id="lt-rule" value="WORKDAY"></div>
+      <div class="field" style="margin-top:14px"><label>标识色</label><input type="text" name="color" id="lt-color" value="#4f6bed"></div>
+      <div class="field" style="margin-top:14px"><label>状态</label><select name="enabled" id="lt-enabled"><option value="1">启用</option><option value="0">停用</option></select></div>
+      <div class="form-actions"><button type="button" class="btn" onclick="resetLt()">清空</button><button class="btn btn-primary" type="submit">保存</button></div></form>
+  </div></div>
+  <div class="card"><div class="card-head"><h2>假别列表</h2><a class="btn btn-sm" th:href="@{/admin/leave-balances}">假期余额</a></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>ID</th><th>编码</th><th>名称</th><th>年度额度</th><th>带薪</th><th>需审批</th><th>结转</th><th>扣减规则</th><th>状态</th><th>操作</th></tr></thead><tbody><tr th:each="t : ${types}"><td th:text="${t.id}">0</td><td><code th:text="${t.code}">-</code></td>
+      <td><b th:text="${t.name}">-</b></td><td th:text="${t.annualQuota}">0</td>
+      <td><span class="badge" th:attr="data-status=${t.paid != null and t.paid == 1 ? '1' : '0'}">-</span></td>
+      <td><span class="badge" th:attr="data-status=${t.needApproval != null and t.needApproval == 1 ? '1' : '0'}">-</span></td>
+      <td><span class="badge" th:attr="data-status=${t.carryForward != null and t.carryForward == 1 ? '1' : '0'}">-</span></td>
+      <td th:text="${t.deductRule}">-</td><td><span class="badge" th:attr="data-status=${t.enabled != null and t.enabled == 1 ? '1' : '0'}">-</span></td>
+      <td class="nowrap"><button class="btn btn-sm" type="button" onclick="editLt(this)"
+          th:attr="data-id=${t.id},data-code=${t.code},data-name=${t.name},data-quota=${t.annualQuota},data-paid=${t.paid},data-appr=${t.needApproval},data-carry=${t.carryForward},data-rule=${t.deductRule},data-color=${t.color},data-enabled=${t.enabled}">编辑</button>
+        <form th:action="@{/admin/leave-types/delete/{id}(id=${t.id})}" method="post" style="display:inline" data-confirm="确认删除该假别？"><button class="btn btn-sm btn-danger" type="submit">删除</button></form></td></tr><tr th:if="${#lists.isEmpty(types)}"><td colspan="10" class="tbl-empty">暂无假别</td></tr></tbody></table></div></div></div>
+</div>
+<script>
+function resetLt(){['lt-id','lt-code','lt-name'].forEach(function(i){document.getElementById(i).value='';});}
+function editLt(b){var d=b.dataset,map={'lt-id':'id','lt-code':'code','lt-name':'name','lt-quota':'quota','lt-paid':'paid','lt-appr':'appr','lt-carry':'carry','lt-rule':'rule','lt-color':'color','lt-enabled':'enabled'};
+  for(var i in map){var v=d[map[i]];document.getElementById(i).value=(v==='null'||v===undefined)?'':v;}}
+</script>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

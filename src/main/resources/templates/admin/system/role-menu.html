@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>菜单授权 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 系统管理 / 菜单授权</div>
+    <div class="page-head">
+      <div><h1>菜单授权</h1><p>按角色勾选可见菜单</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card"><div class="card-head"><h2 th:text="'配置「' + ${role.name} + '」的菜单权限'">菜单权限</h2>
+  <a class="btn btn-sm" th:href="@{/admin/system/roles}">返回角色列表</a></div>
+<div class="card-body">
+  <form th:action="@{/admin/system/roles/grant}" method="post">
+    <input type="hidden" name="roleId" th:value="${role.id}">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th style="width:70px">授权</th><th>ID</th><th>菜单名称</th><th>路径</th><th>权限标识</th><th>类型</th></tr></thead>
+      <tbody><tr th:each="m : ${menus}">
+        <td><input type="checkbox" name="menuIds" th:value="${m.id}" th:checked="${m.checked != null and m.checked == 1}" style="width:auto;min-height:auto"></td>
+        <td th:text="${m.id}">0</td><td th:text="${m.name}">-</td><td><code th:text="${m.url}">-</code></td>
+        <td th:text="${m.permCode}">-</td><td><span class="badge" th:attr="data-status=${m.menuType}">-</span></td></tr>
+        <tr th:if="${#lists.isEmpty(menus)}"><td colspan="6" class="tbl-empty">暂无菜单</td></tr></tbody></table></div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">保存授权</button></div>
+  </form>
+  <div class="hint">保存后相关用户下次请求即生效；超级管理员目录仅应授予 SUPER_ADMIN 角色。</div>
+</div></div>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

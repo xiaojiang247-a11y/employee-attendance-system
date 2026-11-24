@@ -1,0 +1,42 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: attendance-system
+  config:
+    # 本机私有配置（数据库口令、初始超管口令）放在同目录 application-local.yml，
+    # 该文件已被 .gitignore 排除；部署时复制 application-local.yml.example 填写即可。
+    import: optional:file:./application-local.yml
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/attendance_db?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-init-sql: SET time_zone = '+08:00'
+  thymeleaf:
+    cache: false
+    encoding: UTF-8
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+    locale: zh_CN
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+app:
+  port-role: ''
+  port-role-label: ''
+  timezone: Asia/Shanghai
+  timezone-label: 北京时间 (UTC+8)
+  super-admin:
+    # 仅在首次建库、库中不存在 superadmin 时使用；部署后请立即登录修改。
+    password: ${SUPER_ADMIN_PASSWORD:ChangeMe@2026}

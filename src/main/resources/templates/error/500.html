@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>系统错误 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}"></head>
+<body class="err-wrap">
+<div class="err-box">
+  <div class="err-code">500</div>
+  <h2 th:text="${errorTitle != null} ? ${errorTitle} : '系统处理请求时出错'">系统处理请求时出错</h2>
+  <p th:text="${errorMessage != null} ? ${errorMessage} : '请稍后重试，或联系超级管理员排查。'">请稍后重试，或联系超级管理员排查。</p>
+  <div class="hint" th:if="${requestUri != null}" th:text="'请求路径：' + ${requestUri}"></div>
+  <div class="hint">时间口径 <b>北京时间 (UTC+8)</b> · 详细堆栈已写入服务日志</div>
+  <div class="form-actions" style="justify-content:center;border:0;margin-top:24px">
+    <a class="btn btn-primary" th:href="@{/login}">返回登录</a>
+    <a class="btn" href="javascript:history.back()">返回上一页</a>
+    <form th:action="@{/logout}" method="post" style="display:inline"><button class="btn btn-soft" type="submit">切换账号</button></form>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工作日历 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 考勤管理 / 工作日历</div>
+    <div class="page-head">
+      <div><h1>工作日历</h1><p>法定节假日、休息日与调休上班日</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-4">
+  <div class="kpi blue"><div><div class="kpi-label">日历记录</div><div class="kpi-value" th:text="${total}">0</div></div></div>
+  <div class="kpi red"><div><div class="kpi-label">法定节假日</div><div class="kpi-value" th:text="${holidayCount}">0</div></div></div>
+  <div class="kpi amber"><div><div class="kpi-label">休息日</div><div class="kpi-value" th:text="${restCount}">0</div></div></div>
+  <div class="kpi green"><div><div class="kpi-label">调休上班</div><div class="kpi-value" th:text="${workdayCount}">0</div></div></div>
+</div>
+<div class="grid grid-1-2">
+  <div class="card"><div class="card-head"><h2>新增日历</h2></div><div class="card-body">
+    <form th:action="@{/admin/holidays/save}" method="post">
+      <div class="field"><label>日期</label><input type="date" name="calDate" required></div>
+      <div class="field" style="margin-top:14px"><label>类型</label><select name="dayType">
+        <option value="HOLIDAY">法定节假日</option><option value="REST">休息日</option><option value="WORKDAY">调休上班</option></select></div>
+      <div class="field" style="margin-top:14px"><label>名称</label><input type="text" name="name" required placeholder="如：国庆节"></div>
+      <div class="field" style="margin-top:14px"><label>备注</label><textarea name="remark" rows="2"></textarea></div>
+      <div class="form-actions"><button class="btn btn-primary" type="submit">保存</button></div></form>
+    <div class="hint">批量排班会自动跳过节假日与休息日，调休上班日按正常工作日处理。</div>
+  </div></div>
+  <div class="card"><div class="card-head"><h2 th:text="${year} + ' 年工作日历'">工作日历</h2></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>日期</th><th>名称</th><th>类型</th><th>备注</th><th>操作</th></tr></thead><tbody><tr th:each="h : ${rows}"><td th:text="${h.calDate}">-</td><td th:text="${h.name}">-</td>
+      <td><span class="badge" th:attr="data-status=${h.dayType}">-</span></td><td th:text="${h.remark}">-</td>
+      <td><form th:action="@{/admin/holidays/delete/{id}(id=${h.id})}" method="post" data-confirm="确认删除该日历记录？"><button class="btn btn-sm btn-danger" type="submit">删除</button></form></td></tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="5" class="tbl-empty">该年度暂无特殊日历</td></tr></tbody></table></div></div></div>
+</div>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

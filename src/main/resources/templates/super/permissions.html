@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>权限边界 · 超级管理员系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">超级管理员系统 / 权限边界</div>
+    <div class="page-head"><div><h1>三个角色端的权限边界</h1><p>统一登录入口 /login，按角色自动分流；URL 分段 + 菜单授权 + 数据归属三层校验</p></div></div>
+
+<div class="card"><div class="card-head"><h2>角色 × 页面功能矩阵</h2></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+    <thead><tr><th>子系统</th><th>URL 段</th><th>允许角色</th><th>页面功能</th></tr></thead>
+    <tbody><tr th:each="m : ${matrix}">
+      <td><b th:text="${m.sys}">-</b></td><td><code th:text="${m.url}">-</code></td>
+      <td th:text="${m.role}">-</td><td th:text="${m.funcs}">-</td>
+    </tr></tbody>
+  </table></div></div>
+</div>
+
+<div class="card"><div class="card-head"><h2>打卡规则（业务时区 <span th:text="${zoneLabel}">北京时间 (UTC+8)</span>）</h2></div>
+  <div class="card-body">
+    <div class="hint" th:text="${punchRule}"></div>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>打卡时刻</th><th>判定</th><th>迟到 / 早退分钟</th></tr></thead>
+      <tbody>
+        <tr><td>08:59 及更早签到</td><td>正常签到</td><td>0</td></tr>
+        <tr><td>09:00 ~ 09:02 签到</td><td>宽限内，正常签到</td><td>0</td></tr>
+        <tr><td>09:02 之后签到</td><td>迟到（LATE）</td><td>从 09:00 起算，向上取整</td></tr>
+        <tr><td>17:59 之前签退</td><td>早退（EARLY_LEAVE）</td><td>距 18:00 的差值，向上取整</td></tr>
+        <tr><td>17:59 ~ 18:00 签退</td><td>宽限内，正常下班</td><td>0</td></tr>
+        <tr><td>18:00 及之后签退</td><td>正常下班</td><td>0</td></tr>
+      </tbody>
+    </table></div></div>
+</div>
+
+<div class="card"><div class="card-head"><h2>打卡地点与覆盖</h2></div><div class="card-body">
+  <div class="hint">· 员工必须在管理员 / 超级管理员设定的<b>固定地点范围</b>内打卡；未配置任何启用地点时一律拒绝。</div>
+  <div class="hint">· 管理员可新增、维护打卡地点；超级管理员可修改、删除、停用任何管理员设置的地点。</div>
+  <div class="hint">· 超级管理员「设为默认」后，围栏只认该地点，管理员的其它地点自动失效；反向不允许。</div>
+  <div class="hint">· 地点变更、账户增删改启停、越权被拒全部写入 <code>sys_account_log</code>，时间戳为北京时间。</div>
+</div></div>
+
+<div class="card"><div class="card-head"><h2>菜单授权（sys_menu / sys_role_menu）</h2></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+    <thead><tr><th>ID</th><th>菜单</th><th>URL</th><th>权限标识</th><th>类型</th></tr></thead>
+    <tbody><tr th:each="m : ${menus}"><td th:text="${m.id}">0</td><td th:text="${m.name}">-</td>
+      <td><code th:text="${m.url}">-</code></td><td th:text="${m.permCode}">-</td><td th:text="${m.menuType}">-</td></tr></tbody>
+  </table></div></div>
+</div>
+
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

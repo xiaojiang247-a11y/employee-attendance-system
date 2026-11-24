@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>已办审批 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 审批中心 / 已办</div>
+    <div class="page-head">
+      <div><h1>已办审批</h1><p>审批流水与处理记录</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card"><div class="card-head"><h2>已办审批</h2><a class="btn btn-sm" th:href="@{/admin/approval/pending}">返回待办</a></div>
+<div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>单据</th><th>业务类型</th><th>步骤</th><th>审批动作</th><th>意见</th><th>时间</th><th>申请人</th></tr></thead><tbody><tr th:each="r : ${rows}"><td th:text="${r.bizTitle}">-</td><td th:text="${r.bizType}">-</td>
+      <td th:text="${r.stepNo}">1</td><td><span class="tag" th:text="${r.action}">-</span></td>
+      <td th:text="${r.remark}">-</td><td><span data-dt th:attr="data-dt=${r.approveTime}"></span></td>
+      <td th:text="${r.applicantName}">-</td></tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="7" class="tbl-empty">暂无已办记录</td></tr></tbody></table></div></div></div>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

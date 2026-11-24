@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的出差 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">员工系统 / 我的出差</div>
+    <div class="page-head">
+      <div><h1>我的出差</h1><p>出差申请 · 考勤状态联动</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-1-2">
+  <div class="card"><div class="card-head"><h2>申请出差</h2></div><div class="card-body">
+    <form th:action="@{/my/trip/apply}" method="post">
+      <div class="field"><label>出差地点</label><input type="text" name="destination" required></div>
+      <div class="field" style="margin-top:14px"><label>开始日期</label><input type="date" name="startDate" required></div>
+      <div class="field" style="margin-top:14px"><label>结束日期</label><input type="date" name="endDate" required></div>
+      <div class="field" style="margin-top:14px"><label>出差事由</label><textarea name="reason" rows="3" required></textarea></div>
+      <div class="form-actions"><button class="btn btn-primary" type="submit">提交申请</button></div>
+    </form></div></div>
+  <div class="card"><div class="card-head"><h2>说明</h2></div><div class="card-body">
+    <div class="hint">· 出差期间不计入缺卡异常，审批通过后自动回写对应日期的考勤状态。</div>
+    <div class="hint">· 出差天数按自然日计算，可在「我的考勤」中核对状态变化。</div>
+  </div></div>
+</div>
+<div class="card"><div class="card-head"><h2>我的出差记录</h2></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+    <thead><tr><th>目的地</th><th>开始</th><th>结束</th><th>天数</th><th>事由</th><th>申请时间</th><th>状态</th></tr></thead>
+    <tbody><tr th:each="r : ${rows}"><td th:text="${r.destination}">-</td>
+      <td th:text="${r.startDate}">-</td><td th:text="${r.endDate}">-</td><td th:text="${r.days}">0</td>
+      <td th:text="${r.reason}">-</td><td><span data-dt th:attr="data-dt=${r.applyTime}"></span></td>
+      <td><span class="badge" th:attr="data-status=${r.status}">-</span></td></tr>
+      <tr th:if="${#lists.isEmpty(rows)}"><td colspan="7" class="tbl-empty">暂无出差记录</td></tr></tbody></table></div></div>
+</div>
+
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

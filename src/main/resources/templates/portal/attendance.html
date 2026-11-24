@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的考勤 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">员工系统 / 我的考勤</div>
+    <div class="page-head">
+      <div><h1>我的考勤</h1><p>打卡明细 · 异常申诉 · 地点校验结果</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card">
+  <div class="card-head"><h2>考勤记录筛选</h2><span class="sub" th:text="'共 ' + ${total} + ' 条'">-</span></div>
+  <form class="toolbar" th:action="@{/my/attendance}" method="get">
+    <div class="field"><label>开始日期</label><input type="date" name="startDate" th:value="${startDate}"></div>
+    <div class="field"><label>结束日期</label><input type="date" name="endDate" th:value="${endDate}"></div>
+    <div class="field"><label>状态</label><select name="status">
+      <option value="">全部</option><option value="NORMAL" th:selected="${status == 'NORMAL'}">正常</option>
+      <option value="LATE" th:selected="${status == 'LATE'}">迟到</option>
+      <option value="EARLY_LEAVE" th:selected="${status == 'EARLY_LEAVE'}">早退</option>
+      <option value="ABSENT" th:selected="${status == 'ABSENT'}">旷工</option>
+      <option value="LEAVE" th:selected="${status == 'LEAVE'}">请假</option></select></div>
+    <button class="btn btn-primary" type="submit">查询</button>
+  </form>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+    <thead><tr><th>日期</th><th>班次</th><th>上班打卡</th><th>下班打卡</th><th>迟到(分)</th><th>早退(分)</th><th>工时</th><th>打卡地点</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody><tr th:each="r : ${rows}">
+      <td><span data-date th:attr="data-date=${r.attendanceDate}"></span></td>
+      <td th:text="${r.shiftName}">-</td>
+      <td><span data-dt th:attr="data-dt=${r.checkInTime}"></span></td>
+      <td><span data-dt th:attr="data-dt=${r.checkOutTime}"></span></td>
+      <td th:text="${r.lateMinutes}">0</td><td th:text="${r.earlyMinutes}">0</td>
+      <td th:text="${r.workHours}">0</td>
+      <td th:text="${r.punchAddress != null ? r.punchAddress : (r.distanceM != null ? r.distanceM + ' m' : '-')}">-</td>
+      <td><span class="badge" th:attr="data-status=${r.status}">-</span></td>
+      <td><button class="btn btn-sm" type="button" th:if="${r.status != 'NORMAL' and r.status != 'LEAVE'}"
+          onclick="openAppeal(this)" th:attr="data-id=${r.id},data-date=${r.attendanceDate}">异常申诉</button></td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(rows)}"><td colspan="10" class="tbl-empty">所选区间暂无考勤记录</td></tr>
+    </tbody></table></div></div>
+  <div class="pager" th:attr="data-pages=${pageData.totalPages},data-page=${pageData.page},data-total=${pageData.total}"></div>
+</div>
+<div class="modal-mask" id="appealModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <div class="modal-head"><h3>提交异常考勤申诉</h3><button type="button" class="icon-btn" onclick="document.getElementById( + mid + ).style.display='none'">✕</button></div>
+    <div class="modal-body"><form th:action="@{/my/appeal}" method="post">
+  <input type="hidden" name="recordId" id="ap-record">
+  <div class="field"><label>异常日期</label><input type="text" id="ap-date" readonly></div>
+  <div class="field" style="margin-top:14px"><label>申诉说明</label><textarea name="reason" rows="4" required placeholder="请说明异常原因，如：外勤拜访客户、系统故障等"></textarea></div>
+  <div class="form-actions"><button type="button" class="btn" onclick="document.getElementById('appealModal').style.display='none'">取消</button><button class="btn btn-primary" type="submit">提交申诉</button></div>
+</form></div>
+  </div>
+</div>
+<script>
+function openAppeal(b){document.getElementById('ap-record').value=b.dataset.id;document.getElementById('ap-date').value=b.dataset.date;document.getElementById('appealModal').style.display='flex';}
+</script>
+
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

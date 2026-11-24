@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>打卡地点（覆盖） · 超级管理员系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">超级管理员系统 / 打卡地点（可覆盖管理员设置）</div>
+    <div class="page-head"><div><h1>打卡地点</h1><p>设置 / 覆盖员工必须在其中打卡的固定地点</p></div></div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card"><div class="card-head"><h2>地点列表</h2><div class="page-actions">
+  <button class="btn btn-primary btn-sm" onclick="openNew()">＋ 新增地点</button>
+  <a class="btn btn-sm" th:href="@{/super/permissions}">权限边界</a>
+  <a class="btn btn-sm" th:href="@{/super/account-logs}">操作记录</a></div></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+    <thead><tr><th>ID</th><th>地点</th><th>坐标 / 半径</th><th>IP / WiFi</th><th>设置人</th><th>最后修改</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody><tr th:each="l : ${locations}">
+      <td th:text="${l.id}">0</td>
+      <td><b th:text="${l.name}">-</b><div class="hint" th:text="${l.address}"></div></td>
+      <td><span th:text="${l.latitude}">-</span>, <span th:text="${l.longitude}">-</span>
+          <div class="hint" th:text="${l.radiusM} + ' 米'"></div></td>
+      <td><div class="hint" th:text="${l.allowIp}"></div><div class="hint" th:text="${l.wifiSsid}"></div></td>
+      <td><span th:text="${l.createdBy}">-</span>
+          <div class="hint" th:text="${l.createdByRole}"></div></td>
+      <td><span th:text="${l.updatedBy}">-</span>
+          <div class="hint" data-dt th:attr="data-dt=${l.updateTime}"></div></td>
+      <td><span class="badge" th:attr="data-status=${l.enabled != null and l.enabled == 1 ? '1' : '0'}" th:text="${l.enabled != null and l.enabled == 1 ? '启用' : '停用'}">-</span>
+          <div th:if="${l.isDefault == 1}"><span class="badge">默认</span></div></td>
+      <td class="nowrap">
+        <button class="btn btn-sm" type="button" onclick="editLoc(this)"
+          th:attr="data-id=${l.id},data-name=${l.name},data-address=${l.address},data-lon=${l.longitude},data-lat=${l.latitude},data-radius=${l.radiusM},data-ip=${l.allowIp},data-wifi=${l.wifiSsid},data-default=${l.isDefault},data-enabled=${l.enabled},data-remark=${l.remark}">编辑 / 覆盖</button>
+        <form th:action="@{/super/locations/default/{id}(id=${l.id})}" method="post" style="display:inline"><button class="btn btn-sm" type="submit" data-confirm="设为默认后，只有该地点可用于打卡（覆盖管理员的设置），确认？">设为默认</button></form>
+        <form th:action="@{/super/locations/toggle/{id}(id=${l.id})}" method="post" style="display:inline">
+          <input type="hidden" name="enabled" th:value="${l.enabled == 1 ? 0 : 1}">
+          <button class="btn btn-sm" type="submit" th:text="${l.enabled != null and l.enabled == 1 ? '停用' : '启用'}">停用</button></form>
+        <form th:action="@{/super/locations/delete/{id}(id=${l.id})}" method="post" style="display:inline" data-confirm="确认删除该地点？"><button class="btn btn-sm btn-danger" type="submit">删除</button></form>
+      </td></tr>
+      <tr th:if="${#lists.isEmpty(locations)}"><td colspan="8" class="tbl-empty">尚未配置打卡地点，员工将无法打卡</td></tr>
+    </tbody></table></div></div>
+  <div class="pager"><span class="info">启用中 <b th:text="${enabledCount}">0</b> 个地点 · 时间口径 <b th:text="${zoneLabel}">北京时间 (UTC+8)</b></span></div>
+</div>
+
+<div class="card"><div class="card-head"><h2>覆盖规则</h2></div><div class="card-body">
+  <div class="hint">· 管理员在「管理员系统 → 打卡地点」设置地点；超级管理员在本页可<b>修改、删除、停用</b>任何管理员设置的地点。</div>
+  <div class="hint">· 超级管理员把某地点<b>设为默认</b>后，围栏只认这一处，管理员配置的其它地点自动失效（覆盖语义）。</div>
+  <div class="hint">· 管理员不能修改 / 停用 / 删除超级管理员创建的地点，层级不可反向覆盖。</div>
+  <div class="hint">· 未配置任何启用地点时，员工打卡一律被拒绝；地点变更全部写入账户操作记录。</div>
+</div></div>
+
+<div class="modal-mask" id="locModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <div class="modal-head"><h3>新增 / 覆盖打卡地点</h3><button type="button" class="icon-btn" onclick="document.getElementById('locModal').style.display='none'">✕</button></div>
+    <div class="modal-body"><form th:action="@{/super/locations/save}" method="post">
+      <input type="hidden" name="id" id="l-id">
+      <div class="form-grid">
+        <div class="field req"><label>地点名称</label><input type="text" name="name" id="l-name" required></div>
+        <div class="field"><label>详细地址</label><input type="text" name="address" id="l-address"></div>
+        <div class="field"><label>纬度</label><input type="text" name="latitude" id="l-lat" placeholder="如 31.230416"></div>
+        <div class="field"><label>经度</label><input type="text" name="longitude" id="l-lon" placeholder="如 121.473701"></div>
+        <div class="field"><label>允许半径（米）</label><input type="number" name="radiusM" id="l-radius" value="200"></div>
+        <div class="field"><label>IP 白名单</label><input type="text" name="allowIp" id="l-ip" placeholder="如 192.168.1.*"></div>
+        <div class="field"><label>办公 WiFi SSID</label><input type="text" name="wifiSsid" id="l-wifi"></div>
+        <div class="field"><label>适用考勤组</label><select name="groupIds" id="l-groups" multiple size="3">
+          <option th:each="g : ${groups}" th:value="${g.id}" th:text="${g.name}">考勤组</option></select></div>
+        <div class="field"><label>设为默认（覆盖）</label><select name="isDefault" id="l-default"><option value="0">否</option><option value="1">是</option></select></div>
+        <div class="field"><label>启用</label><select name="enabled" id="l-enabled"><option value="1">启用</option><option value="0">停用</option></select></div>
+        <div class="field"><label>备注</label><input type="text" name="remark" id="l-remark"></div>
+      </div>
+      <div class="form-actions"><button type="button" class="btn" onclick="document.getElementById('locModal').style.display='none'">取消</button><button class="btn btn-primary" type="submit">保存</button></div>
+    </form></div>
+  </div>
+</div>
+<script>
+function setVal(id,v){document.getElementById(id).value=(v===undefined||v===null||v==='null')?'':v;}
+function openNew(){
+  ['l-id','l-name','l-address','l-lat','l-lon','l-ip','l-wifi','l-remark'].forEach(function(i){document.getElementById(i).value='';});
+  document.getElementById('l-radius').value='200';
+  document.getElementById('l-default').value='0';
+  document.getElementById('l-enabled').value='1';
+  document.getElementById('l-groups').selectedIndex=-1;
+  document.getElementById('locModal').style.display='flex';
+}
+function editLoc(b){
+  var d=b.dataset;
+  setVal('l-id',d.id);setVal('l-name',d.name);setVal('l-address',d.address);
+  setVal('l-lat',d.lat);setVal('l-lon',d.lon);setVal('l-radius',d.radius);
+  setVal('l-ip',d.ip);setVal('l-wifi',d.wifi);setVal('l-remark',d.remark);
+  document.getElementById('l-default').value=String(d.default==='1'?'1':'0');
+  document.getElementById('l-enabled').value=String(d.enabled==='1'?'1':'0');
+  document.getElementById('locModal').style.display='flex';
+}
+</script>
+
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

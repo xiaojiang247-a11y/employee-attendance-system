@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>超级工作台 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">超级管理员系统 / 工作台</div>
+    <div class="page-head">
+      <div><h1>超级工作台</h1><p>主管理系统 · 账户体系总览与审计</p></div>
+      <div class="page-actions" th:if="${false}"></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-4">
+  <div class="kpi purple"><div><div class="kpi-label">超级管理员</div><div class="kpi-value" th:text="${superCount}">0</div><div class="kpi-foot">主管理系统最高权限</div></div><div class="kpi-icon"><svg class="ico ico-lg" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/></svg></div></div>
+  <div class="kpi blue"><div><div class="kpi-label">管理员账户</div><div class="kpi-value" th:text="${adminCount}">0</div><div class="kpi-foot">管理员子系统账户</div></div><div class="kpi-icon"><svg class="ico ico-lg" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/></svg></div></div>
+  <div class="kpi green"><div><div class="kpi-label">员工账户</div><div class="kpi-value" th:text="${employeeCount}">0</div><div class="kpi-foot">员工子系统账户</div></div><div class="kpi-icon"><svg class="ico ico-lg" viewBox="0 0 24 24"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg></div></div>
+  <div class="kpi amber"><div><div class="kpi-label">今日账户操作</div><div class="kpi-value" th:text="${logToday}">0</div><div class="kpi-foot">累计 <em th:text="${logTotal}">0</em> 条审计记录</div></div><div class="kpi-icon"><svg class="ico ico-lg" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div></div>
+</div>
+
+<div class="grid grid-2">
+  <div class="card">
+    <div class="card-head"><h2>子系统隔离说明</h2><span class="sub">角色 → 可见功能 → 可管账户</span></div>
+    <div class="card-body"><div class="table-wrap"><table class="tbl">
+      <thead><tr><th>子系统</th><th>角色</th><th>功能范围</th><th>可管理账户</th></tr></thead>
+      <tbody>
+        <tr><td><b>超级管理员系统</b></td><td><span class="badge" data-status="ADMIN">超级管理员</span></td><td>管理员账户 CRUD、角色权限、账户操作记录、系统配置</td><td>管理员级账户</td></tr>
+        <tr><td><b>管理员系统</b></td><td><span class="badge" data-status="HR">管理员</span></td><td>员工档案、员工账户、考勤规则、审批、报表</td><td>员工级账户</td></tr>
+        <tr><td><b>员工系统</b></td><td><span class="badge" data-status="EMPLOYEE">员工</span></td><td>本人考勤、班表、假期余额、自助申请</td><td>仅本人信息</td></tr>
+      </tbody></table></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>快捷管理</h2></div>
+    <div class="card-body"><div class="grid grid-2">
+      <a class="btn btn-primary btn-block" th:href="@{/super/admins}">管理员账户管理</a>
+      <a class="btn btn-block" th:href="@{/super/roles}">角色与权限</a>
+      <a class="btn btn-block" th:href="@{/super/account-logs}">账户操作记录</a>
+      <a class="btn btn-block" th:href="@{/super/config}">系统配置</a>
+    </div>
+    <div class="hint" style="margin-top:14px">今日登录 <b th:text="${loginToday}">0</b> 人次 · 在职员工 <b th:text="${headcount}">0</b> 人</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>最近账户操作</h2><a class="btn btn-sm" th:href="@{/super/account-logs}">全部记录</a></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+    <thead><tr><th>时间</th><th>操作人</th><th>操作</th><th>目标账号</th><th>变更摘要</th><th>IP</th><th>结果</th></tr></thead>
+    <tbody><tr th:each="l : ${recentLogs}">
+      <td><span data-dt th:attr="data-dt=${l.createTime}"></span></td>
+      <td th:text="${l.operator}">-</td><td><span class="tag" th:text="${actionName.get(l.action)}">-</span></td>
+      <td th:text="${l.targetUser}">-</td><td th:text="${l.detail}">-</td><td th:text="${l.ip}">-</td>
+      <td><span class="badge" th:attr="data-status=${l.result}">成功</span></td></tr>
+      <tr th:if="${#lists.isEmpty(recentLogs)}"><td colspan="7" class="tbl-empty">暂无账户操作记录</td></tr>
+    </tbody></table></div></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>角色体系</h2><span class="sub">sys_role · 数据范围</span></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+    <thead><tr><th>角色编码</th><th>角色名称</th><th>数据范围</th><th>说明</th><th>状态</th></tr></thead>
+    <tbody><tr th:each="r : ${roleStats}">
+      <td th:text="${r.code}">-</td><td th:text="${r.name}">-</td>
+      <td><span class="badge" th:attr="data-status=${r.dataScope}">-</span></td>
+      <td th:text="${r.description}">-</td><td><span class="badge" th:attr="data-status=${r.enabled != null and r.enabled == 1 ? '1' : '0'}">-</span></td></tr>
+    </tbody></table></div></div>
+</div>
+
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

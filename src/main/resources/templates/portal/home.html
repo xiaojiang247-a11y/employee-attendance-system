@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的工作台 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">员工系统 / 工作台</div>
+    <div class="page-head">
+      <div><h1>我的工作台</h1><p>打卡 · 本月概览 · 申请进度 · 公告</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-2-1">
+  <div class="punch-card">
+    <div class="punch-time" data-clock></div>
+    <div class="punch-date" th:text="'今日 ' + ${today} + ' · 北京时间 · 须在允许地点范围内打卡'">今日</div>
+    <div class="punch-actions">
+      <form th:action="@{/my/check-in}" method="post" onsubmit="return submitPunch(this)" style="display:inline">
+        <input type="hidden" name="lat"><input type="hidden" name="lng"><input type="hidden" name="wifiSsid">
+        <button class="punch-btn solid" type="submit" th:disabled="${todayRecord != null and todayRecord.checkInTime != null}">上班打卡</button>
+      </form>
+      <form th:action="@{/my/check-out}" method="post" onsubmit="return submitPunch(this)" style="display:inline">
+        <input type="hidden" name="lat"><input type="hidden" name="lng"><input type="hidden" name="wifiSsid">
+        <button class="punch-btn" type="submit" th:disabled="${todayRecord == null or todayRecord.checkInTime == null or todayRecord.checkOutTime != null}">下班打卡</button>
+      </form>
+    </div>
+    <div class="punch-meta">
+      <span>上班：<b th:if="${todayRecord != null and todayRecord.checkInTime != null}"><span data-dt th:attr="data-dt=${todayRecord.checkInTime}"></span></b><b th:unless="${todayRecord != null and todayRecord.checkInTime != null}">未打卡</b></span>
+      <span>下班：<b th:if="${todayRecord != null and todayRecord.checkOutTime != null}"><span data-dt th:attr="data-dt=${todayRecord.checkOutTime}"></span></b><b th:unless="${todayRecord != null and todayRecord.checkOutTime != null}">未打卡</b></span>
+      <span>状态：<b th:text="${todayRecord != null ? todayRecord.status : '待打卡'}">待打卡</b></span>
+    </div>
+    <div class="punch-meta" style="opacity:.8"><span id="geoText">正在获取当前位置…</span></div>
+  </div>
+  <div class="card" style="margin-bottom:0">
+    <div class="card-head"><h2>本月概览</h2><span class="sub" th:text="'北京时间 ' + ${today}">本月</span></div>
+    <div class="card-body">
+      <div class="kv"><div><span class="k">应出勤</span><span class="v" th:text="${summary != null ? summary.expectedDays : '-'}">-</span></div>
+        <div><span class="k">实出勤</span><span class="v" th:text="${summary != null ? summary.actualDays : '-'}">-</span></div></div>
+      <div class="kv"><div><span class="k">迟到</span><span class="v" th:text="${summary != null ? summary.lateCnt : 0} + ' 次'">0 次</span></div>
+        <div><span class="k">工时</span><span class="v" th:text="${summary != null ? summary.workHours : 0} + ' h'">0 h</span></div></div>
+      <div class="kv"><div><span class="k">加班</span><span class="v" th:text="${summary != null ? summary.overtimeHours : 0} + ' h'">0 h</span></div>
+        <div><span class="k">请假</span><span class="v" th:text="${summary != null ? summary.leaveDays : 0} + ' 天'">0 天</span></div></div>
+      <div style="padding-top:14px" class="grid grid-2">
+        <a class="btn btn-sm" th:href="@{/my/attendance}">我的考勤</a>
+        <a class="btn btn-sm" th:href="@{/my/schedule}">我的班表</a>
+        <a class="btn btn-sm" th:href="@{/my/leave}">申请请假</a>
+        <a class="btn btn-sm" th:href="@{/my/balance}">假期余额</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:18px">
+  <div class="card">
+    <div class="card-head"><h2>近 7 日考勤</h2><a class="btn btn-sm" th:href="@{/my/attendance}">全部</a></div>
+    <div class="card-body"><ul class="mini-list">
+      <li th:each="r : ${weekRecords}">
+        <div class="li-body"><div class="li-title" th:text="${r.attendanceDate} + ' · ' + ${r.status}">日期</div>
+          <div class="li-sub">上班 <span data-dt th:attr="data-dt=${r.checkInTime}"></span> / 下班 <span data-dt th:attr="data-dt=${r.checkOutTime}"></span></div></div>
+        <div class="li-side"><span class="badge" th:attr="data-status=${r.status}">-</span></div></li>
+      <li th:if="${#lists.isEmpty(weekRecords)}" class="muted">暂无考勤记录</li>
+    </ul></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>我的申请进度</h2><a class="btn btn-sm" th:href="@{/my/leave}">去申请</a></div>
+    <div class="card-body"><ul class="mini-list">
+      <li th:each="l : ${myLeaves}"><div class="li-body"><div class="li-title" th:text="'请假 ' + ${l.days} + ' 天'">请假</div>
+        <div class="li-sub" th:text="${l.startDate} + ' ~ ' + ${l.endDate}">区间</div></div>
+        <div class="li-side"><span class="badge" th:attr="data-status=${l.status}">-</span></div></li>
+      <li th:each="o : ${myOvertimes}"><div class="li-body"><div class="li-title" th:text="'加班 ' + ${o.hours} + ' 小时'">加班</div>
+        <div class="li-sub" th:text="${o.otDate}">日期</div></div>
+        <div class="li-side"><span class="badge" th:attr="data-status=${o.status}">-</span></div></li>
+      <li th:each="m : ${myMakeups}"><div class="li-body"><div class="li-title" th:text="'补卡 ' + ${m.missDate}">补卡</div>
+        <div class="li-sub" th:text="${m.punchType}">类型</div></div>
+        <div class="li-side"><span class="badge" th:attr="data-status=${m.status}">-</span></div></li>
+      <li th:if="${#lists.isEmpty(myLeaves) and #lists.isEmpty(myOvertimes) and #lists.isEmpty(myMakeups)}" class="muted">暂无申请记录</li>
+    </ul></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>公告通知</h2><span class="sub" th:text="${zoneLabel} + ' · ' + ${punchRule}">-</span></div>
+  <div class="card-body"><ul class="mini-list">
+    <li th:each="n : ${notices}"><span class="badge" th:attr="data-status=${n.noticeType}">通知</span>
+      <div class="li-body"><div class="li-title" th:text="${n.title}">标题</div><div class="li-sub" th:text="${n.content}">内容</div></div></li>
+    <li th:if="${#lists.isEmpty(notices)}" class="muted">暂无公告</li>
+  </ul></div>
+</div>
+
+<script>
+window.__geo = {lat:'', lng:''};
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(function (p) {
+    window.__geo.lat = p.coords.latitude.toFixed(6);
+    window.__geo.lng = p.coords.longitude.toFixed(6);
+    document.getElementById('geoText').textContent = '已获取当前位置：' + window.__geo.lat + ', ' + window.__geo.lng;
+  }, function (e) {
+    document.getElementById('geoText').textContent = '未能获取定位（' + e.message + '），将按 IP 白名单 / WiFi 校验';
+  }, {enableHighAccuracy: true, timeout: 8000});
+} else {
+  document.getElementById('geoText').textContent = '浏览器不支持定位，将按 IP 白名单校验';
+}
+function submitPunch(f) {
+  var la = f.querySelector('[name=lat]'), ln = f.querySelector('[name=lng]');
+  if (la) la.value = window.__geo.lat || '';
+  if (ln) ln.value = window.__geo.lng || '';
+  return true;
+}
+</script>
+
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

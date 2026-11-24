@@ -1,0 +1,360 @@
+diff -ruN a/员工系统/src/main/java/com/example/attendance/config/CustomUserDetailsService.java b/员工系统/src/main/java/com/example/attendance/config/CustomUserDetailsService.java
+--- a/员工系统/src/main/java/com/example/attendance/config/CustomUserDetailsService.java	2026-11-22 20:27:25.077777300 +0800
++++ b/员工系统/src/main/java/com/example/attendance/config/CustomUserDetailsService.java	2026-11-22 20:27:26.656808200 +0800
+@@ -26,10 +26,10 @@
+         if (user == null) throw new UsernameNotFoundException("用户不存在或已停用: " + username);
+ 
+         List<GrantedAuthority> authorities = new ArrayList<>();
++        // 主角色只取 sys_user.role 一个来源：PortRoleGuard 按「第一个 ROLE_」判定端口，
++        // SecurityConfig 按全部 authorities 判定 URL。若再并入 sys_user_role 的 ROLE_，
++        // 两处角色集合不同源，错配数据即可在员工端口获得超管权限。
+         authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
+-        for (String code : userMapper.findRoleCodes(user.getId())) {
+-            authorities.add(new SimpleGrantedAuthority("ROLE_" + code));
+-        }
+         for (String perm : userMapper.findPermCodes(user.getId())) {
+             authorities.add(new SimpleGrantedAuthority(perm));
+         }
+diff -ruN a/员工系统/src/main/java/com/example/attendance/config/GlobalExceptionHandler.java b/员工系统/src/main/java/com/example/attendance/config/GlobalExceptionHandler.java
+--- a/员工系统/src/main/java/com/example/attendance/config/GlobalExceptionHandler.java	2026-11-22 20:27:25.112277500 +0800
++++ b/员工系统/src/main/java/com/example/attendance/config/GlobalExceptionHandler.java	2026-11-22 20:27:26.694120100 +0800
+@@ -2,6 +2,7 @@
+ 
+ import com.example.attendance.exception.BizException;
+ import jakarta.servlet.http.HttpServletRequest;
++import jakarta.servlet.http.HttpServletResponse;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ import org.springframework.ui.Model;
+@@ -27,12 +28,20 @@
+                 if (path != null && !path.equals(request.getRequestURI())) return "redirect:" + path;
+             } catch (IllegalArgumentException ignored) { }
+         }
++        // 无 Referer（API / 直接 POST / 隐私策略剥离）时按请求所属端回源：
++        // 统一兜底 /dashboard 会让员工端与超管端跳到无权访问的页面，业务提示随之丢失。
++        String uri = request.getRequestURI();
++        if (uri != null && uri.startsWith("/my/")) return "redirect:/my/home";
++        if (uri != null && uri.startsWith("/super/")) return "redirect:/super/dashboard";
+         return "redirect:/dashboard";
+     }
+ 
+     @ExceptionHandler(Exception.class)
+-    public String handleOther(Exception e, HttpServletRequest request, Model model) {
++    public String handleOther(Exception e, HttpServletRequest request,
++                              HttpServletResponse response, Model model) {
+         log.error("请求处理失败: {} {}", request.getMethod(), request.getRequestURI(), e);
++        // 视图渲染不会自动设置状态码：不显式写 500 会把服务端错误伪装成 HTTP 200
++        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+         model.addAttribute("errorTitle", "系统处理请求时出错");
+         model.addAttribute("errorMessage", e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
+         model.addAttribute("requestUri", request.getRequestURI());
+diff -ruN a/员工系统/src/main/java/com/example/attendance/controller/EmployeePortalController.java b/员工系统/src/main/java/com/example/attendance/controller/EmployeePortalController.java
+--- a/员工系统/src/main/java/com/example/attendance/controller/EmployeePortalController.java	2026-11-22 20:27:25.213596600 +0800
++++ b/员工系统/src/main/java/com/example/attendance/controller/EmployeePortalController.java	2026-11-22 20:27:26.806629200 +0800
+@@ -81,8 +81,9 @@
+     }
+ 
+     private String clientIp(HttpServletRequest req) {
+-        String xf = req.getHeader("X-Forwarded-For");
+-        return (xf == null || xf.isEmpty()) ? req.getRemoteAddr() : xf.split(",")[0].trim();
++        // X-Forwarded-For / X-Real-IP 由客户端任意构造，不能作为 IP 白名单依据：
++        // 服务直连、未部署可信反向代理，网络层唯一可信值就是 TCP 对端地址。
++        return req.getRemoteAddr();
+     }
+ 
+     private void submitFlow(String bizType, Long bizId, String remark) {
+@@ -199,8 +200,9 @@
+     public String applyLeave(@RequestParam String typeCode, @RequestParam String startDate,
+                              @RequestParam String endDate, @RequestParam String reason,
+                              RedirectAttributes ra) {
+-        LeaveRequest lr = leaveService.apply(empId(), typeCode, LocalDate.parse(startDate),
+-                LocalDate.parse(endDate), reason);
++        LocalDate s = reqDate(startDate, "开始"), e = reqDate(endDate, "结束");
++        if (e.isBefore(s)) throw new BizException("结束日期不能早于开始日期");
++        LeaveRequest lr = leaveService.apply(empId(), typeCode, s, e, reason);
+         submitFlow("LEAVE", lr.getId(), "提交请假申请 " + lr.getDays() + " 天");
+         ra.addFlashAttribute("msg", "请假申请已提交（" + lr.getDays() + " 天），等待审批");
+         return "redirect:/my/leave";
+@@ -224,7 +226,10 @@
+     public String applyOvertime(@RequestParam String otDate, @RequestParam BigDecimal hours,
+                                 @RequestParam String otType, @RequestParam String compensateType,
+                                 @RequestParam String reason, RedirectAttributes ra) {
+-        LocalDate d = LocalDate.parse(otDate);
++        LocalDate d = reqDate(otDate, "加班");
++        if (hours == null || hours.compareTo(BigDecimal.ZERO) <= 0
++                || hours.compareTo(BigDecimal.valueOf(24)) > 0)
++            throw new BizException("加班时长必须在 0~24 小时之间");
+         OvertimeRequest o = new OvertimeRequest();
+         o.setEmployeeId(empId());
+         o.setOtDate(d);
+@@ -271,7 +276,8 @@
+     public String applyTrip(@RequestParam String destination, @RequestParam String startDate,
+                             @RequestParam String endDate, @RequestParam String reason,
+                             RedirectAttributes ra) {
+-        LocalDate s = LocalDate.parse(startDate), e = LocalDate.parse(endDate);
++        LocalDate s = reqDate(startDate, "开始"), e = reqDate(endDate, "结束");
++        if (e.isBefore(s)) throw new BizException("结束日期不能早于开始日期");
+         BusinessTrip t = new BusinessTrip();
+         t.setEmployeeId(empId());
+         t.setDestination(destination);
+@@ -297,11 +303,16 @@
+     public String applyMakeup(@RequestParam String missDate, @RequestParam String punchType,
+                               @RequestParam String makeupTime, @RequestParam String reason,
+                               RedirectAttributes ra) {
++        LocalDate d = reqDate(missDate, "缺卡");
++        String mt = makeupTime != null && makeupTime.length() == 4 ? "0" + makeupTime : makeupTime;
++        java.time.LocalTime time;
++        try { time = java.time.LocalTime.parse(mt); }
++        catch (Exception ex) { throw new BizException("补卡时间格式不正确，应为 HH:mm"); }
+         MakeupRequest m = new MakeupRequest();
+         m.setEmployeeId(empId());
+-        m.setMissDate(LocalDate.parse(missDate));
++        m.setMissDate(d);
+         m.setPunchType(punchType);
+-        m.setMakeupTime(LocalDateTime.parse(missDate + "T" + makeupTime));
++        m.setMakeupTime(LocalDateTime.of(d, time));
+         m.setReason(reason);
+         m.setStatus("PENDING");
+         makeupMapper.insert(m);
+@@ -361,6 +372,12 @@
+         return "redirect:/my/profile";
+     }
+ 
++    /** 员工端表单日期：非法格式转成业务提示，不让 DateTimeParseException 冒到 500 页 */
++    private LocalDate reqDate(String s, String label) {
++        try { return LocalDate.parse(s); }
++        catch (Exception e) { throw new BizException(label + "日期格式不正确，应为 yyyy-MM-dd"); }
++    }
++
+     private LocalDate parse(String s, LocalDate fallback) {
+         if (s == null || s.isEmpty()) return fallback;
+         try { return LocalDate.parse(s); } catch (Exception e) { return fallback; }
+diff -ruN a/员工系统/src/main/java/com/example/attendance/controller/LocationController.java b/员工系统/src/main/java/com/example/attendance/controller/LocationController.java
+--- a/员工系统/src/main/java/com/example/attendance/controller/LocationController.java	2026-11-22 20:27:25.174649700 +0800
++++ b/员工系统/src/main/java/com/example/attendance/controller/LocationController.java	2026-11-22 20:27:26.765934000 +0800
+@@ -106,6 +106,11 @@
+     /** 统一做层级断言 + 操作留痕，避免每个动作各写一遍 */
+     private String mutate(Long id, RedirectAttributes ra, String action, String desc, Runnable op) {
+         PunchLocation l = locationMapper.findById(id);
++        if (l == null) {
++            accountService.writeFailure(action, String.valueOf(id), "地点不存在或已被删除");
++            ra.addFlashAttribute("error", "地点不存在或已被删除");
++            return "redirect:/admin/locations";
++        }
+         try {
+             assertCanEdit(l);
+             op.run();
+diff -ruN a/员工系统/src/main/java/com/example/attendance/controller/SuperLocationController.java b/员工系统/src/main/java/com/example/attendance/controller/SuperLocationController.java
+--- a/员工系统/src/main/java/com/example/attendance/controller/SuperLocationController.java	2026-11-22 20:27:25.194529700 +0800
++++ b/员工系统/src/main/java/com/example/attendance/controller/SuperLocationController.java	2026-11-22 20:27:26.785839600 +0800
+@@ -66,6 +66,9 @@
+                 locationMapper.insert(l);
+             } else {
+                 locationMapper.update(l);
++                // 覆盖修改管理员设置的地点：必须补写接管标记，否则 created_by_role 仍是 ADMIN，
++                // findSuperDefault 命中不到、管理员还能反向改回去。
++                locationMapper.takeover(l.getId(), who);
+             }
+             locationMapper.clearGroups(l.getId());
+             if (groupIds != null) {
+@@ -86,7 +89,7 @@
+     @PostMapping("/default/{id}")
+     public String setDefault(@PathVariable Long id, RedirectAttributes ra) {
+         return mutate(id, ra, "LOCATION_DEFAULT", "设为默认地点（覆盖管理员设置）",
+-                () -> locationMapper.setDefault(id));
++                () -> locationMapper.setSuperDefault(id));
+     }
+ 
+     @PostMapping("/toggle/{id}")
+@@ -105,6 +108,11 @@
+ 
+     private String mutate(Long id, RedirectAttributes ra, String action, String desc, Runnable op) {
+         PunchLocation l = locationMapper.findById(id);
++        if (l == null) {
++            accountService.writeFailure(action, String.valueOf(id), "地点不存在或已被删除");
++            ra.addFlashAttribute("error", "地点不存在或已被删除");
++            return "redirect:/super/locations";
++        }
+         try {
+             op.run();
+             accountService.writeLocationLog(action, l == null ? String.valueOf(id) : l.getName(), desc);
+diff -ruN a/员工系统/src/main/java/com/example/attendance/mapper/PunchLocationMapper.java b/员工系统/src/main/java/com/example/attendance/mapper/PunchLocationMapper.java
+--- a/员工系统/src/main/java/com/example/attendance/mapper/PunchLocationMapper.java	2026-11-22 20:27:25.028902400 +0800
++++ b/员工系统/src/main/java/com/example/attendance/mapper/PunchLocationMapper.java	2026-11-22 20:27:26.607061000 +0800
+@@ -72,9 +72,26 @@
+     """)
+     PunchLocation findSuperDefault();
+ 
+-    @Update("UPDATE punch_location SET is_default = IF(id = #{id}, 1, 0)")
++    @Update("UPDATE punch_location SET is_default = IF(id = #{id}, 1, 0) WHERE id = #{id} OR is_default = 1")
+     int setDefault(Long id);
+ 
++    /** 超管接管管理员创建的地点：补写接管标记，使 findSuperDefault 与层级保护同时生效 */
++    @Update("""
++        UPDATE punch_location SET created_by=#{actor}, created_by_role='SUPER_ADMIN',
++               updated_by=#{actor}, updated_by_role='SUPER_ADMIN', update_time=NOW()
++        WHERE id=#{id}
++    """)
++    int takeover(@Param("id") Long id, @Param("actor") String actor);
++
++    /** 超管设为默认：同时标记接管，否则管理员创建的地点 findSuperDefault 命中不到，覆盖语义失效 */
++    @Update("""
++        UPDATE punch_location
++        SET is_default = IF(id = #{id}, 1, 0),
++            created_by_role = IF(id = #{id}, 'SUPER_ADMIN', created_by_role)
++        WHERE id = #{id} OR is_default = 1
++    """)
++    int setSuperDefault(@Param("id") Long id);
++
+     @Update("UPDATE punch_location SET enabled = #{enabled} WHERE id = #{id}")
+     int updateEnabled(@Param("id") Long id, @Param("enabled") int enabled);
+ 
+diff -ruN a/员工系统/src/main/java/com/example/attendance/service/AccountService.java b/员工系统/src/main/java/com/example/attendance/service/AccountService.java
+--- a/员工系统/src/main/java/com/example/attendance/service/AccountService.java	2026-11-22 20:27:25.656244100 +0800
++++ b/员工系统/src/main/java/com/example/attendance/service/AccountService.java	2026-11-22 20:27:27.262789200 +0800
+@@ -229,9 +229,9 @@
+         try {
+             ServletRequestAttributes ra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+             if (ra == null) return null;
++            // 审计日志同样只记网络层对端地址，避免伪造代理头污染操作记录
+             HttpServletRequest req = ra.getRequest();
+-            String ip = req.getHeader("X-Forwarded-For");
+-            if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) ip = req.getRemoteAddr();
++            String ip = req.getRemoteAddr();
+             return ip == null ? null : ip.substring(0, Math.min(ip.length(), 64));
+         } catch (Exception e) { return null; }
+     }
+diff -ruN a/员工系统/src/main/java/com/example/attendance/service/AttendanceService.java b/员工系统/src/main/java/com/example/attendance/service/AttendanceService.java
+--- a/员工系统/src/main/java/com/example/attendance/service/AttendanceService.java	2026-11-22 20:27:25.629706900 +0800
++++ b/员工系统/src/main/java/com/example/attendance/service/AttendanceService.java	2026-11-22 20:27:27.227776400 +0800
+@@ -217,6 +217,10 @@
+         }
+         if ("OUT".equals(m.getPunchType())) r.setCheckOutTime(m.getMakeupTime());
+         else r.setCheckInTime(m.getMakeupTime());
++        if (r.getCheckInTime() != null && r.getCheckOutTime() != null
++                && r.getCheckOutTime().isBefore(r.getCheckInTime())) {
++            throw new BizException("补卡失败：签退时间不能早于签到时间");
++        }
+         r.setIsMakeup(1);
+         recalc(r, shift);
+         if (r.getId() == null) recordMapper.insert(r); else recordMapper.update(r);
+@@ -229,18 +233,18 @@
+         AttendanceRecord r = recordMapper.findById(a.getRecordId());
+         if (r == null) return;
+         Shift s = r.getShiftId() == null ? null : shiftMapper.findById(r.getShiftId());
++        // 申诉复核只撤销「迟到/早退」判定，不能凭空补造打卡事实：
++        // 缺卡/旷工状态保留，否则月度汇总会把漏打卡算出勤。
++        String st = r.getStatus();
++        boolean missing = "ABSENT".equals(st) || "MISSING_IN".equals(st) || "MISSING_OUT".equals(st);
+         r.setLateMinutes(0);
+         r.setEarlyMinutes(0);
+-        if (r.getCheckInTime() != null && r.getCheckOutTime() != null) {
+-            r.setStatus("NORMAL");
+-            if (s != null) {
+-                long minutes = ChronoUnit.MINUTES.between(r.getCheckInTime(), r.getCheckOutTime());
+-                r.setWorkHours(BigDecimal.valueOf(Math.max(0, minutes / 60.0 - 1.0))
+-                        .setScale(1, RoundingMode.HALF_UP));
+-            }
+-        } else {
+-            r.setStatus("NORMAL");
++        if (r.getCheckInTime() != null && r.getCheckOutTime() != null && s != null) {
++            long minutes = ChronoUnit.MINUTES.between(r.getCheckInTime(), r.getCheckOutTime());
++            r.setWorkHours(BigDecimal.valueOf(Math.max(0, minutes / 60.0 - 1.0))
++                    .setScale(1, RoundingMode.HALF_UP));
+         }
++        if (!missing) r.setStatus("NORMAL");
+         r.setRemark("异常申诉复核通过：" + (a.getReply() == null ? "" : a.getReply()));
+         recordMapper.update(r);
+     }
+diff -ruN a/员工系统/src/main/java/com/example/attendance/service/LeaveService.java b/员工系统/src/main/java/com/example/attendance/service/LeaveService.java
+--- a/员工系统/src/main/java/com/example/attendance/service/LeaveService.java	2026-11-22 20:27:25.594202500 +0800
++++ b/员工系统/src/main/java/com/example/attendance/service/LeaveService.java	2026-11-22 20:27:27.190859300 +0800
+@@ -51,12 +51,18 @@
+         }
+         long days = 0;
+         for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
+-            boolean weekend = d.getDayOfWeek().getValue() >= 6;
+-            if (makeUpWorkdays.contains(d) || (!weekend && !restDays.contains(d))) days++;
++            if (isWorkday(d, restDays, makeUpWorkdays)) days++;
+         }
+         return BigDecimal.valueOf(days);
+     }
+ 
++    /** 单日是否应出勤：调休上班日计入、周末与节假日剔除；calcDays 与 onApproved 共用同一口径 */
++    private boolean isWorkday(LocalDate d, Set<LocalDate> restDays, Set<LocalDate> makeUpWorkdays) {
++        if (makeUpWorkdays.contains(d)) return true;
++        if (d.getDayOfWeek().getValue() >= 6) return false;
++        return !restDays.contains(d);
++    }
++
+     @Transactional
+     public LeaveRequest apply(Long employeeId, String typeCode, LocalDate start, LocalDate end, String reason) {
+         if (employeeId == null) throw new BizException("当前账号未绑定员工档案，无法提交请假");
+@@ -105,10 +111,14 @@
+             LeaveBalance b = balanceMapper.findOne(lr.getEmployeeId(), lr.getStartDate().getYear(), lr.getTypeCode());
+             if (b != null) balanceMapper.consume(b.getId(), lr.getDays());
+         }
++        Set<LocalDate> restDays = new HashSet<>();
++        Set<LocalDate> makeUpWorkdays = new HashSet<>();
++        for (HolidayCalendar h : holidayMapper.findByRange(lr.getStartDate(), lr.getEndDate())) {
++            if ("WORKDAY".equals(h.getDayType())) makeUpWorkdays.add(h.getCalDate());
++            else restDays.add(h.getCalDate());
++        }
+         for (LocalDate d = lr.getStartDate(); !d.isAfter(lr.getEndDate()); d = d.plusDays(1)) {
+-            if (d.getDayOfWeek().getValue() >= 6) continue;
+-            HolidayCalendar h = holidayMapper.findByDate(d);
+-            if (h != null && !"WORKDAY".equals(h.getDayType())) continue;
++            if (!isWorkday(d, restDays, makeUpWorkdays)) continue;
+             AttendanceRecord r = recordMapper.findTodayRecord(lr.getEmployeeId(), d);
+             if (r == null) {
+                 r = new AttendanceRecord();
+diff -ruN a/员工系统/src/main/java/com/example/attendance/service/PunchLocationService.java b/员工系统/src/main/java/com/example/attendance/service/PunchLocationService.java
+--- a/员工系统/src/main/java/com/example/attendance/service/PunchLocationService.java	2026-11-22 20:27:25.620182100 +0800
++++ b/员工系统/src/main/java/com/example/attendance/service/PunchLocationService.java	2026-11-22 20:27:27.216990800 +0800
+@@ -63,21 +63,25 @@
+         int nearest = Integer.MAX_VALUE;
+         String nearestName = null;
+         for (PunchLocation l : candidates) {
+-            if (l.getLongitude() != null && l.getLatitude() != null && lat != null && lng != null) {
++            // IP 白名单是唯一来自网络层、服务端可校验的因子：一旦配置就必须命中。
++            // 否则 GPS 坐标与 WiFi SSID 都是客户端表单上报值（可任意伪造），
++            // 单独命中就放行等于围栏完全失效。
++            boolean hasIpRule = hasText(l.getAllowIp());
++            boolean ipOk = hasIpRule && ip != null && ipMatch(l.getAllowIp(), ip);
++            if (hasIpRule && !ipOk) continue;
++
++            if (l.getLongitude() != null && l.getLatitude() != null && lat != null && lng != null
++                    && validLatLng(lat, lng)) {
+                 int d = (int) Math.round(haversine(lat, lng,
+                         l.getLatitude().doubleValue(), l.getLongitude().doubleValue()));
+                 if (d < nearest) { nearest = d; nearestName = l.getName(); }
+                 int radius = (l.getRadiusM() == null || l.getRadiusM() <= 0) ? 200 : l.getRadiusM();
+                 if (d <= radius) return new Result(l.getId(), l.getName(), d, "GPS");
+             }
+-            if (hasText(l.getAllowIp()) && ip != null && ipMatch(l.getAllowIp(), ip)) {
+-                return new Result(l.getId(), l.getName(), null, "IP");
+-            }
+-            if (hasText(l.getWifiSsid()) && hasText(wifiSsid)
+-                    && l.getWifiSsid().trim().equalsIgnoreCase(wifiSsid.trim())) {
+-                return new Result(l.getId(), l.getName(), null, "WIFI");
+-            }
+-            // 只填名称、三因子均未配置的地点属于无效配置，跳过而不是放行
++            if (ipOk) return new Result(l.getId(), l.getName(), null, "IP");
++            // WiFi SSID 由浏览器表单上报（浏览器本身无法读取 SSID），不再作为放行依据；
++            // 历史流水的 WIFI 匹配类型仍由 matchLabel 兼容展示。
++            // 只填名称、未配置可信因子的地点属于无效配置，跳过而不是放行
+         }
+         String hint = nearest == Integer.MAX_VALUE
+                 ? "未获取到定位信息，请允许浏览器定位或连接办公网络"
+@@ -121,6 +125,11 @@
+ 
+     private static boolean hasText(String s) { return s != null && !s.trim().isEmpty(); }
+ 
++    /** 客户端上报坐标先做数值范围校验，避免非法值写进流水或让距离计算失真 */
++    private static boolean validLatLng(double lat, double lng) {
++        return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
++    }
++
+     /** 支持精确 IP、192.168.1.* 通配、192.168.1.0/24 CIDR，多条用逗号分隔 */
+     private static boolean ipMatch(String rule, String ip) {
+         for (String part : rule.split("[,，;\\s]+")) {

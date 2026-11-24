@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>假期余额 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">员工系统 / 假期余额</div>
+    <div class="page-head">
+      <div><h1>假期余额</h1><p>年度额度 · 已用 / 剩余 · 调休折算</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="card">
+  <div class="card-head"><h2>假期额度</h2>
+    <form class="page-actions" th:action="@{/my/balance}" method="get">
+      <input type="number" name="year" th:value="${year}" style="width:110px">
+      <button class="btn btn-sm" type="submit">切换年度</button></form></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+    <thead><tr><th>假别</th><th>年度</th><th>总额度</th><th>已使用</th><th>剩余</th><th>使用进度</th><th>最近更新</th></tr></thead>
+    <tbody><tr th:each="r : ${rows}">
+      <td><b th:text="${r.typeName}">-</b></td><td th:text="${r.yearNum}">-</td>
+      <td th:text="${r.totalDays}">0</td><td th:text="${r.usedDays}">0</td>
+      <td><b th:text="${r.remainDays}">0</b></td>
+      <td><div class="progress"><i th:style="'width:' + ${r.totalDays != null and r.totalDays > 0 ? (r.usedDays * 100 / r.totalDays) : 0} + '%'"></i></div></td>
+      <td><span data-dt th:attr="data-dt=${r.updateTime}"></span></td></tr>
+      <tr th:if="${#lists.isEmpty(rows)}"><td colspan="7" class="tbl-empty">该年度暂无额度，请联系人事发放</td></tr>
+    </tbody></table></div></div>
+  <div class="pager"><span class="info">额度由人事按假别规则发放，审批通过的请假与加班转调休会自动更新余额</span></div>
+</div>
+
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

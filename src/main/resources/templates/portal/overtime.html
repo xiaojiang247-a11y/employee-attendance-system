@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的加班 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">员工系统 / 我的加班</div>
+    <div class="page-head">
+      <div><h1>我的加班</h1><p>加班申请 · 调休折算 · 审批进度</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-1-2">
+  <div class="card"><div class="card-head"><h2>申请加班</h2></div><div class="card-body">
+    <form th:action="@{/my/overtime/apply}" method="post">
+      <div class="field"><label>加班日期</label><input type="date" name="otDate" required></div>
+      <div class="field" style="margin-top:14px"><label>加班时长（小时）</label><input type="number" name="hours" step="0.5" min="0.5" value="2" required></div>
+      <div class="field" style="margin-top:14px"><label>加班类型</label><select name="otType">
+        <option value="WORKDAY_OT">工作日加班</option><option value="WEEKEND">周末加班</option><option value="HOLIDAY">法定节假日加班</option></select></div>
+      <div class="field" style="margin-top:14px"><label>补偿方式</label><select name="compensateType">
+        <option value="COMP">转调休</option><option value="FEE">加班费</option></select></div>
+      <div class="field" style="margin-top:14px"><label>加班事由</label><textarea name="reason" rows="3" required></textarea></div>
+      <div class="form-actions"><button class="btn btn-primary" type="submit">提交申请</button></div>
+    </form></div></div>
+  <div class="card"><div class="card-head"><h2>说明</h2></div><div class="card-body">
+    <div class="hint">· 加班申请需经部门负责人 / 人事考勤员审批，审批通过后自动计入月度汇总。</div>
+    <div class="hint">· 选择「转调休」时，审批通过会按 8 小时 = 1 天折算计入调休余额。</div>
+    <div class="hint">· 待审批状态下可撤回申请。</div>
+  </div></div>
+</div>
+<div class="card"><div class="card-head"><h2>我的加班记录</h2></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl">
+    <thead><tr><th>加班日期</th><th>时长</th><th>类型</th><th>补偿</th><th>事由</th><th>状态</th><th>操作</th></tr></thead>
+    <tbody><tr th:each="r : ${rows}">
+      <td th:text="${r.otDate}">-</td><td th:text="${r.hours} + ' h'">-</td>
+      <td><span class="badge" th:attr="data-status=${r.otType}">-</span></td>
+      <td><span class="badge" th:attr="data-status=${r.compensateType}">-</span></td>
+      <td th:text="${r.reason}">-</td><td><span class="badge" th:attr="data-status=${r.status}">-</span></td>
+      <td><form th:action="@{/my/overtime/cancel/{id}(id=${r.id})}" method="post" th:if="${r.status == 'PENDING'}"><button class="btn btn-sm btn-danger" type="submit">撤回</button></form></td>
+    </tr><tr th:if="${#lists.isEmpty(rows)}"><td colspan="7" class="tbl-empty">暂无加班记录</td></tr></tbody></table></div></div>
+</div>
+
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

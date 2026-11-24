@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>角色权限 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 系统管理 / 角色权限</div>
+    <div class="page-head">
+      <div><h1>角色权限</h1><p>RBAC 角色定义与数据范围</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-1-2">
+  <div class="card"><div class="card-head"><h2>新增 / 编辑角色</h2></div><div class="card-body">
+    <form th:action="@{/admin/system/roles/save}" method="post">
+      <input type="hidden" name="id" id="r-id">
+      <div class="field req"><label>角色编码</label><input type="text" name="code" id="r-code" required placeholder="如 AUDITOR"></div>
+      <div class="field" style="margin-top:14px"><label>角色名称</label><input type="text" name="name" id="r-name" required></div>
+      <div class="field" style="margin-top:14px"><label>数据范围</label><select name="dataScope" id="r-scope">
+        <option value="ALL">全公司</option><option value="DEPT">本部门</option><option value="SELF">仅本人</option></select></div>
+      <div class="field" style="margin-top:14px"><label>状态</label><select name="enabled" id="r-enabled"><option value="1">启用</option><option value="0">停用</option></select></div>
+      <div class="field" style="margin-top:14px"><label>说明</label><textarea name="description" id="r-desc" rows="3"></textarea></div>
+      <div class="form-actions"><button type="button" class="btn" onclick="resetRole()">清空</button><button class="btn btn-primary" type="submit">保存</button></div></form></div></div>
+  <div class="card"><div class="card-head"><h2>角色列表</h2><span class="sub">超级管理员可调整全部角色</span></div>
+  <div class="card-body flush"><div class="table-wrap"><table class="tbl"><thead><tr><th>ID</th><th>编码</th><th>名称</th><th>数据范围</th><th>账户数</th><th>状态</th><th>操作</th></tr></thead><tbody><tr th:each="r : ${roles}"><td th:text="${r.id}">0</td><td><code th:text="${r.code}">-</code></td>
+      <td><b th:text="${r.name}">-</b></td><td><span class="badge" th:attr="data-status=${r.dataScope}">-</span></td>
+      <td th:text="${r.userCount}">0</td><td><span class="badge" th:attr="data-status=${r.enabled != null and r.enabled == 1 ? '1' : '0'}">-</span></td>
+      <td class="nowrap"><a class="btn btn-sm" th:href="@{/admin/system/roles/menu/{id}(id=${r.id})}">菜单权限</a>
+        <button class="btn btn-sm" type="button" onclick="editRole(this)"
+          th:attr="data-id=${r.id},data-code=${r.code},data-name=${r.name},data-scope=${r.dataScope},data-enabled=${r.enabled},data-desc=${r.description}">编辑</button></td></tr><tr th:if="${#lists.isEmpty(roles)}"><td colspan="7" class="tbl-empty">暂无角色</td></tr></tbody></table></div></div></div>
+</div>
+<script>
+function resetRole(){['r-id','r-code','r-name','r-desc'].forEach(function(i){document.getElementById(i).value='';});}
+function editRole(b){var d=b.dataset,map={'r-id':'id','r-code':'code','r-name':'name','r-scope':'scope','r-enabled':'enabled','r-desc':'desc'};
+  for(var i in map){var v=d[map[i]];document.getElementById(i).value=(v==='null'||v===undefined)?'':v;}}
+</script>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

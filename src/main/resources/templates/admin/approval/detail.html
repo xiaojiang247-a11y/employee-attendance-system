@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>单据详情 · 企业员工考勤管理系统</title>
+<link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+<link rel="icon" sizes="any" th:href="@{/favicon.ico}">
+<link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{layout/frame :: sidebar}"></div>
+<div class="main">
+  <header th:replace="~{layout/frame :: topbar}"></header>
+  <div class="content">
+    <div class="crumbs">管理员系统 / 审批中心 / 单据详情</div>
+    <div class="page-head">
+      <div><h1>单据详情</h1><p>单据内容与审批流水</p></div>
+    </div>
+    <div class="alert alert-success" th:if="${msg}" th:text="${msg}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+<div class="grid grid-2">
+  <div class="card"><div class="card-head"><h2 th:text="${bizTypeName} + ' 单据详情'">单据详情</h2>
+    <a class="btn btn-sm" th:href="@{/admin/approval/pending}">返回待办</a></div>
+    <div class="card-body"><div class="kv">
+      <div><span class="k">单据编号</span><span class="v" th:text="${detail['id']}">-</span></div>
+      <div><span class="k">申请人</span><span class="v" th:text="${detail['employeeName']}">-</span></div>
+      <div><span class="k">状态</span><span class="v"><span class="badge" th:attr="data-status=${detail['status']}">-</span></span></div>
+      <div><span class="k">申请时间</span><span class="v"><span data-dt th:attr="data-dt=${detail['applyTime']}"></span></span></div>
+      <div><span class="k">开始日期</span><span class="v" th:text="${detail['startDate']}">-</span></div>
+      <div><span class="k">结束日期</span><span class="v" th:text="${detail['endDate']}">-</span></div>
+      <div><span class="k">天数 / 时长</span><span class="v" th:text="${detail['days']}">-</span></div>
+      <div><span class="k">加班日期</span><span class="v" th:text="${detail['otDate']}">-</span></div>
+      <div><span class="k">目的地</span><span class="v" th:text="${detail['destination']}">-</span></div>
+      <div><span class="k">缺卡日期</span><span class="v" th:text="${detail['missDate']}">-</span></div>
+      <div><span class="k">异常类型</span><span class="v" th:text="${detail['exceptionType']}">-</span></div>
+      <div><span class="k">事由</span><span class="v" th:text="${detail['reason']}">-</span></div>
+    </div>
+    <form th:action="@{/admin/approval/decide}" method="post" style="margin-top:18px">
+      <input type="hidden" name="bizType" th:value="${bizType}"><input type="hidden" name="bizId" th:value="${detail['id']}">
+      <div class="field"><label>审批意见</label><textarea name="remark" rows="2"></textarea></div>
+      <div class="form-actions"><button class="btn btn-danger" type="submit" name="approve" value="false">驳回</button>
+        <button class="btn btn-primary" type="submit" name="approve" value="true">通过</button></div></form>
+    </div></div>
+  <div class="card"><div class="card-head"><h2>审批历史</h2></div><div class="card-body">
+    <ul class="timeline"><li th:each="h : ${history}"><b th:text="${h.action}">操作</b>
+      <span th:text="${h.approverName}">审批人</span> · <span data-dt th:attr="data-dt=${h.approveTime}"></span>
+      <div class="muted small" th:text="${h.remark}">意见</div></li>
+      <li th:if="${#lists.isEmpty(history)}" class="muted">暂无审批历史</li></ul></div></div>
+</div>
+  </div>
+  <div th:replace="~{layout/frame :: footer}"></div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>
